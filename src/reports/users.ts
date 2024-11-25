@@ -1,62 +1,131 @@
+import { isAfter, parseISO } from "date-fns";
 import {
   listCopilotSeats,
-  listEnterpriseCopilotSeats,
   filterCopilotSeats,
   CopilotSeatDetails,
-  EnterpriseCopilotSeatDetails,
-} from "../copilot/user-management";
+} from "../endpoints/copilot-user-management";
+import { listRepoActivities, listReposForOrg } from "../endpoints/repositories";
 
 import { AppConfig } from "../shared/app-config";
 
+type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
+
+interface ActiveUser {
+  user: string;
+  last_active: string;
+}
+
+interface OrgActivity {
+  org_name: string;
+  repo_name: string;
+  active_users: ActiveUser[];
+}
+
 const items_per_page = 50;
 
-async function getSeatsByOrg(
+async function getCopilotSeatsByOrg(
   org: string,
-  last_activity_since: string
+  lastActivitySince?: string
 ): Promise<CopilotSeatDetails[]> {
   const orgCopilotSeats = await listCopilotSeats({
-    org: org,
+    org,
     page: 1,
     per_page: items_per_page,
   });
 
+  if (!lastActivitySince) {
+    return orgCopilotSeats;
+  }
+
   const filteredSeats = await filterCopilotSeats({
     seats: orgCopilotSeats,
-    last_activity_since: last_activity_since,
+    last_activity_since: lastActivitySince,
   });
 
   return filteredSeats;
 }
 
-// async function getSeatsByEnterprise(
-//   enterprise: string,
-//   last_activity_since: string
-// ): Promise<EnterpriseCopilotSeatDetails[]> {
-//   const enterpriseCopilotSeats = await listEnterpriseCopilotSeats({
-//     enterprise: enterprise,
-//     page: 1,
-//     per_page: items_per_page,
-//   });
-
-//   const filteredSeats = await filterCopilotSeats({
-//     seats: enterpriseCopilotSeats,
-//     last_activity_since: last_activity_since,
-//   }) as EnterpriseCopilotSeatDetails[];
-
-//   return filteredSeats;
-// }
-
-export async function getCopilotSeats({
-    type,
-    last_activity_since,
+export async function readOrgInfo({
+  time_period,
 }: {
-  type: "organization", // | "enterprise",
-  last_activity_since: string
-}): Promise<CopilotSeatDetails[]> {
-    //if (type === "organization") {
-    return getSeatsByOrg(AppConfig.ORGANIZATION, last_activity_since);
-    //}  
-    // else {
-    //     return getSeatsByEnterprise(AppConfig.ENTERPRISE, last_activity_since);
-    // }
+  time_period: TimePeriodType;
+}): Promise<any> {
+  const org = AppConfig.ORGANIZATION;
+
+  const seatsList = await getCopilotSeatsByOrg(org);
+  const seats = seatsList.map((seat) => seat.assignee.login);
+  const activity = await getOrgUserActivity({ org, time_period });
+
+  return { org, seats, activity };
+}
+
+async function getOrgUserActivity({
+  org,
+  time_period,
+}: {
+  org: string;
+  time_period: TimePeriodType;
+}): Promise<OrgActivity[]> {
+  const reposListIterator = listReposForOrg({
+    org: org,
+    type: "all",
+    page: 1,
+    per_page: items_per_page,
+  });
+
+  const orgActivity: OrgActivity[] = [];
+  for await (const repo of reposListIterator) {
+    const activeUsers = await getActiveUsers({
+      repo_name: repo.name,
+      repo_owner: repo.owner.login,
+      time_period: time_period,
+    });
+
+    orgActivity.push({
+      org_name: org,
+      repo_name: repo.name,
+      active_users: activeUsers,
+    });
+  }
+
+  return orgActivity;
+}
+
+async function getActiveUsers({
+  repo_name,
+  repo_owner,
+  time_period,
+}: {
+  repo_name: string;
+  repo_owner: string;
+  time_period: TimePeriodType;
+}): Promise<ActiveUser[]> {
+  const iterator = listRepoActivities({
+    owner: repo_owner,
+    repo: repo_name,
+    time_period: time_period,
+    per_page: items_per_page,
+  });
+
+  const activity_lookup: { [key: string]: string } = {};
+
+  for await (const activity of iterator) {
+    const user = activity.actor?.login ?? "unknown";
+
+    if (!activity_lookup[user]) {
+      activity_lookup[user] = activity.timestamp;
+    } else {
+      if (
+        isAfter(parseISO(activity.timestamp), parseISO(activity_lookup[user]))
+      ) {
+        activity_lookup[user] = activity.timestamp;
+      }
+    }
+  }
+
+  const activeUsers: ActiveUser[] = Object.keys(activity_lookup).map((user) => {
+    return { user, last_active: activity_lookup[user] };
+  });
+
+  return activeUsers;
 }

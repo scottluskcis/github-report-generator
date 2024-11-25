@@ -1,25 +1,27 @@
-import { getCopilotSeats } from "./reports/users";
+import { readOrgInfo } from "./reports/users";
  
 console.log("\n------------------");
 console.log("RESULTS");
 console.log("------------------\n");
  
-getCopilotSeats({
-  type: "organization",
-  last_activity_since: "2024-11-01T00:00:00Z",
-})
-.then((filteredData) => {
-  console.log(
-    "FILTERED: Found %d copilot seats for the %s \n",
-    filteredData.length,
-    "organization"
-  ); 
-  return filteredData;
-})
-.then((filteredData) => {
-  const assignees = filteredData.map(seat => seat.assignee.login);    
-  console.log("ASSIGNEES:\n%s\n", assignees.join(", \n")); 
-})
+
+const activity_since = "2024-11-01T00:00:00Z";
+
+readOrgInfo({ time_period: "year" })
+// .then((filteredData) => {
+//   console.log(
+//     "FILTERED: Found %d copilot seats for the %s for activity since %s \n",
+//     filteredData.length,
+//     "organization",
+//     activity_since
+//   ); 
+//   return filteredData;
+// })
+// .then((filteredData) => {
+//   const assignees = filteredData.map(seat => seat.assignee.login);    
+//   console.log("ASSIGNEES:\n%s\n", assignees.join(", \n")); 
+// })
+.then(console.log)
 .catch(console.error);
 
 /*
