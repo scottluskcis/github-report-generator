@@ -23,6 +23,20 @@ interface OrgActivity {
 
 const items_per_page = 50;
 
+export async function readOrgInfo({
+  org,
+  time_period,
+}: {
+  org: string;
+  time_period: TimePeriodType;
+}): Promise<any> { 
+  const seatsList = await getCopilotSeatsByOrg(org);
+  const copilot_seats = seatsList.map((seat) => seat.assignee.login);
+  const repo_activity = await getOrgUserActivity({ org, time_period });
+
+  return { org, copilot_seats, repo_activity };
+}
+
 async function getCopilotSeatsByOrg(
   org: string,
   lastActivitySince?: string
@@ -43,20 +57,6 @@ async function getCopilotSeatsByOrg(
   });
 
   return filteredSeats;
-}
-
-export async function readOrgInfo({
-  time_period,
-}: {
-  time_period: TimePeriodType;
-}): Promise<any> {
-  const org = AppConfig.ORGANIZATION;
-
-  const seatsList = await getCopilotSeatsByOrg(org);
-  const seats = seatsList.map((seat) => seat.assignee.login);
-  const activity = await getOrgUserActivity({ org, time_period });
-
-  return { org, seats, activity };
 }
 
 async function getOrgUserActivity({
@@ -81,11 +81,13 @@ async function getOrgUserActivity({
       time_period: time_period,
     });
 
-    orgActivity.push({
-      org_name: org,
-      repo_name: repo.name,
-      active_users: activeUsers,
-    });
+    if(activeUsers.length > 0) {
+      orgActivity.push({
+        org_name: org,
+        repo_name: repo.name,
+        active_users: activeUsers,
+      });
+    }
   }
 
   return orgActivity;
