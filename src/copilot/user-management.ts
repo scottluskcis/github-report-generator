@@ -7,9 +7,13 @@ import { components } from "@octokit/openapi-types/types";
 type ListCopilotSeatsParams = RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["parameters"];
 export type CopilotSeatDetails = components["schemas"]["copilot-seat-details"];
 
-// work around until type is officially in octokit
+// TODO: work around until type is officially in octokit
 type ListEnterpriseCopilotSeatParams = Omit<ListCopilotSeatsParams, 'org'> & {
   enterprise: string;
+};
+// TODO: work around until type is officially in octokit
+export type EnterpriseCopilotSeatDetails = CopilotSeatDetails & {
+ organization: any;
 };
 
 export async function listCopilotSeats(
@@ -29,13 +33,17 @@ export async function listCopilotSeats(
 
 export async function listEnterpriseCopilotSeats(
   params: ListEnterpriseCopilotSeatParams
-): Promise<CopilotSeatDetails[]> {
-  const seats: CopilotSeatDetails[] = [];   
-  for await (const item of invokeRequest<ListEnterpriseCopilotSeatParams, CopilotSeatDetails>({
+): Promise<EnterpriseCopilotSeatDetails[]> {
+  const seats: EnterpriseCopilotSeatDetails[] = [];   
+
+  console.warn("WARN: page_results is turned off for listEnterpriseCopilotSeats as iterator causes a 404, TODO - fix");
+  
+
+  for await (const item of invokeRequest<ListEnterpriseCopilotSeatParams, EnterpriseCopilotSeatDetails>({
     endpoint: "GET /enterprises/{enterprise}/copilot/billing/seats",
     property: "seats",
     params: params,
-    page_results: true,
+    page_results: false, // TODO: turning this off temporarily throws a 404 when tries to page
   })) {  
     seats.push(item);
   }
@@ -43,11 +51,11 @@ export async function listEnterpriseCopilotSeats(
 }
 
 type FilterCopilotSeatsParams =  {
-  seats: CopilotSeatDetails[];
+  seats: CopilotSeatDetails[] | EnterpriseCopilotSeatDetails[];
   last_activity_since: string;
 };
 
-export async function filterCopilotSeats(params: FilterCopilotSeatsParams): Promise<CopilotSeatDetails[]> { 
+export async function filterCopilotSeats(params: FilterCopilotSeatsParams): Promise<CopilotSeatDetails[] | EnterpriseCopilotSeatDetails[]> { 
   return params.seats.filter(seat => {
     const lastActivityDate = seat.last_activity_at ? parseISO(seat.last_activity_at) : null;
     const filterDate = startOfDay(parseISO(params.last_activity_since));
