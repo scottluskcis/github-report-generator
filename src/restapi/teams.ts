@@ -4,6 +4,11 @@ import { components } from "@octokit/openapi-types/types";
 
 const octokit = getOctokit({ token_type: 'pat-fine-grained' });
 
+// --------------------------------------------------
+// listTeams 
+// reference: https://docs.github.com/en/rest/teams/teams?apiVersion=2022-11-28#list-teams
+// --------------------------------------------------
+
 type ListTeamsParameters = RestEndpointMethodTypes["teams"]["list"]["parameters"];
 type TeamDetails = components["schemas"]["team-simple"];
 
@@ -19,6 +24,11 @@ export async function* listTeams(params: ListTeamsParameters): AsyncGenerator<Te
   } 
 }
 
+// --------------------------------------------------
+// listTeamReposInOrg 
+// reference: https://docs.github.com/en/rest/teams/teams?apiVersion=2022-11-28#list-team-repositories
+// --------------------------------------------------
+
 type ListTeamReposInOrgParameters = RestEndpointMethodTypes["teams"]["listReposInOrg"]["parameters"];
 type TeamRepoDetails = components["schemas"]["repository"];
 
@@ -33,6 +43,11 @@ export async function* listTeamReposInOrg(params: ListTeamReposInOrgParameters):
     }
   }
 }
+
+// --------------------------------------------------
+// listTeamMembers 
+// reference: https://docs.github.com/en/rest/teams/members?apiVersion=2022-11-28#list-team-members
+// --------------------------------------------------
 
 type ListTeamMembersParameters = RestEndpointMethodTypes["teams"]["listMembersInOrg"]["parameters"];
 type TeamMemberDetails = components["schemas"]["simple-user"];

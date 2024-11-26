@@ -2,11 +2,15 @@ import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import { components } from "@octokit/openapi-types/types";
 import { applyHeaders, getOctokit } from "../shared/octokit-client";
 
-type ListReposForOrgParameters = RestEndpointMethodTypes["repos"]["listForOrg"]["parameters"];
-type ListReposForOrgResponseData = RestEndpointMethodTypes["repos"]["listForOrg"]["response"]["data"];
-type RepositoryDetails = components["schemas"]["repository"];
-
 const octokit = getOctokit({ token_type: "pat-fine-grained" });
+
+// --------------------------------------------------
+// listReposForOrg 
+// reference: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-organization-repositories
+// --------------------------------------------------
+
+type ListReposForOrgParameters = RestEndpointMethodTypes["repos"]["listForOrg"]["parameters"];
+type RepositoryDetails = components["schemas"]["repository"];
 
 export async function* listReposForOrg(
   params: ListReposForOrgParameters
@@ -24,6 +28,11 @@ export async function* listReposForOrg(
     }
   } 
 }
+
+// --------------------------------------------------
+// listRepoActivities
+// reference: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-activities
+// --------------------------------------------------
 
 type ListRepoActivitiesParameters = RestEndpointMethodTypes["repos"]["listActivities"]["parameters"];
 type ActivityDetail = components["schemas"]["activity"];

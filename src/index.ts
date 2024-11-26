@@ -1,11 +1,11 @@
-import { readOrgInfo } from "./data/organization";
+import { getOrgActivity } from "./data/organization";
 import { AppConfig } from "./shared/app-config";
  
 console.log("\n------------------");
 console.log("RESULTS");
 console.log("------------------\n");
  
-readOrgInfo({ 
+getOrgActivity({ 
   org: AppConfig.ORGANIZATION, 
   time_period: "year",
   per_page: 50 

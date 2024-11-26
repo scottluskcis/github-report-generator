@@ -1,11 +1,13 @@
 import { isAfter, parseISO } from "date-fns";
 import {
-  listCopilotSeats,
-  filterCopilotSeats,
-  CopilotSeatDetails,
+  listCopilotSeats, 
 } from "../restapi/copilot";
 import { listRepoActivities, listReposForOrg } from "../restapi/repositories";
-import { listTeamMembers, listTeamReposInOrg, listTeams } from "../restapi/teams";
+import {
+  listTeamMembers,
+  listTeamReposInOrg,
+  listTeams,
+} from "../restapi/teams";
 
 type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
 
@@ -24,85 +26,85 @@ interface TeamSummary {
   team_slug?: string;
   team_name: string;
   team_description?: string;
-  members?: string[];  
+  members?: string[];
   repos: RepoSummary[];
 }
 
-export async function readOrgInfo({
+export async function getOrgActivity({
   org,
   time_period,
-  per_page
+  per_page,
 }: {
   org: string;
   time_period: TimePeriodType;
   per_page: number;
-}): Promise<any> { 
-  // const seatsList = await getCopilotSeatsByOrg(org);
-  // const copilot_seats = seatsList.map((seat) => seat.assignee.login);
-  // const repo_activity = await getOrgUserActivity({ org, time_period });
-
-  // return { org, copilot_seats, repo_activity };
-  
-  const teams = await getAllReposActivity({ 
+}): Promise<any> {
+  const seats_list = await getCopilotSeatsByOrg({
     org,
     time_period,
-    per_page
+    per_page,
   });
 
-  return { teams };
+  const copilot_seat_assignees = seats_list.map((seat) => {
+    return {
+      assignee: seat.assignee.login,
+      last_activity_at: seat.last_activity_at,
+    };
+  });
+
+  const teams = await getAllReposActivity({
+    org,
+    time_period,
+    per_page,
+  });
+
+  return { teams, copilot_seats: copilot_seat_assignees };
 }
 
 async function getCopilotSeatsByOrg({
   org,
-  last_activity_since,
-  per_page
+  time_period,
+  per_page,
 }: {
-  org: string,
-  last_activity_since?: string,
-  per_page: number
-}): Promise<CopilotSeatDetails[]> {
+  org: string;
+  time_period: TimePeriodType;
+  per_page: number;
+}): Promise<any[]> {
   const orgCopilotSeats = await listCopilotSeats({
     org,
     page: 1,
     per_page,
   });
 
-  if (!last_activity_since) {
-    return orgCopilotSeats;
-  }
-
-  const filteredSeats = await filterCopilotSeats({
-    seats: orgCopilotSeats,
-    last_activity_since: last_activity_since,
-  });
-
-  return filteredSeats;
+  return orgCopilotSeats;
 }
 
 async function getAllReposActivity({
   org,
   time_period,
-  per_page
+  per_page,
 }: {
   org: string;
   time_period: TimePeriodType;
   per_page: number;
 }): Promise<TeamSummary[]> {
-  // all teams within the org 
-  const teams = await getTeamsActivity({ 
-    org, 
-    time_period, 
-    per_page 
+  // all teams within the org
+  const teams = await getTeamsActivity({
+    org,
+    time_period,
+    per_page,
   });
- 
+
   // now get repos not assigned to a team
-  const repos_with_teams = teams.flatMap((team) => team.repos.map((repo) => repo.repo_name));
+  const repos_with_teams = teams.flatMap((team) =>
+    team.repos.map((repo) => repo.repo_name)
+  );
   const repos_no_team = await getOrgReposWithoutTeam({
     org,
     per_page,
     time_period,
     team_repos: repos_with_teams,
-  }); 
+  });
   teams.push(repos_no_team);
 
   return teams;
@@ -111,14 +113,14 @@ async function getAllReposActivity({
 async function getTeamsActivity({
   org,
   time_period,
-  per_page
+  per_page,
 }: {
   org: string;
   time_period: TimePeriodType;
   per_page: number;
-}): Promise<TeamSummary[]> { 
+}): Promise<TeamSummary[]> {
   const teams: TeamSummary[] = [];
- 
+
   // teams within the org
   const teamsIterator = listTeams({ org, per_page });
   for await (const team of teamsIterator) {
@@ -133,14 +135,14 @@ async function getTeamsActivity({
         repo_name: repo.name,
         repo_owner: org,
         time_period,
-        per_page
+        per_page,
       });
 
-      team_repos.push({ 
-        repo_name: repo.name, 
+      team_repos.push({
+        repo_name: repo.name,
         repo_full_name: repo.full_name,
-        active_users: activeUsers 
-      }); 
+        active_users: activeUsers,
+      });
     }
 
     // members of the team
@@ -175,8 +177,8 @@ async function getOrgReposWithoutTeam({
 }): Promise<TeamSummary> {
   const reposListIterator = listReposForOrg({
     org,
-    type: "all", 
-    per_page 
+    type: "all",
+    per_page,
   });
 
   const repos: RepoSummary[] = [];
@@ -193,10 +195,10 @@ async function getOrgReposWithoutTeam({
       per_page,
     });
 
-    repos.push({ 
-      repo_name: repo.name, 
+    repos.push({
+      repo_name: repo.name,
       repo_full_name: repo.full_name,
-      active_users: activeUsers 
+      active_users: activeUsers,
     });
   }
 
