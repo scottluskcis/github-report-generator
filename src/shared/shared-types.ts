@@ -4,7 +4,7 @@ export interface ActivityData {
   org: string;
   time_period: TimePeriodType;
   teams: TeamSummary[];
-  copilot_seat_assignees: CopilotSeatAssignee[];
+  copilot_seats: CopilotSeatAssignee[];
 }
 
 export interface CopilotSeatAssignee {

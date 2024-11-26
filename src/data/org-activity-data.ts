@@ -8,7 +8,6 @@ import {
 } from "../restapi/teams";
 import { ActiveUser, ActivityData, RepoSummary, TeamSummary, TimePeriodType } from "../shared/shared-types";
 
-
 export async function getOrgActivity({
   org,
   time_period,
@@ -20,11 +19,10 @@ export async function getOrgActivity({
 }): Promise<ActivityData> {
   const seats_list = await getCopilotSeatsByOrg({
     org,
-    time_period,
     per_page,
   });
 
-  const copilot_seat_assignees = seats_list.map((seat) => {
+  const org_copilot_seats = seats_list.map((seat) => {
     return {
       assignee: seat.assignee.login,
       last_activity_at: seat.last_activity_at,
@@ -41,17 +39,15 @@ export async function getOrgActivity({
     org,
     time_period,
     teams, 
-    copilot_seat_assignees 
+    copilot_seats: org_copilot_seats 
   };
 }
 
 async function getCopilotSeatsByOrg({
   org,
-  time_period,
   per_page,
 }: {
   org: string;
-  time_period: TimePeriodType;
   per_page: number;
 }): Promise<any[]> {
   const orgCopilotSeats = await listCopilotSeats({

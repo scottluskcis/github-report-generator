@@ -1,4 +1,4 @@
-import { getOrgActivity } from "./data/activity-data";
+import { getOrgActivity } from "./data/org-activity-data";
 import { AppConfig } from "./shared/app-config";
 
 import * as fs from "fs";

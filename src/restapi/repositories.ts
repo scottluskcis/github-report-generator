@@ -53,3 +53,25 @@ export async function* listRepoActivities(
     }
   }
 }
+
+// --------------------------------------------------
+// listReposForUser
+// reference: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repositories-for-a-user
+// --------------------------------------------------
+
+type ListReposForUserParameters = RestEndpointMethodTypes["repos"]["listForUser"]["parameters"];
+
+export async function* listReposForUser(params: ListReposForUserParameters): AsyncGenerator<RepositoryDetails, void, unknown> {
+  const parameters = applyHeaders(params);
+
+  const iterator = await octokit.paginate.iterator(
+    octokit.rest.repos.listForUser, 
+    parameters
+  );
+
+  for await (const { data: repos } of iterator) {
+    for (const repo of repos) {
+      yield repo;
+    }
+  }
+}
