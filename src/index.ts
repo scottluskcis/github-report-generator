@@ -5,7 +5,11 @@ console.log("\n------------------");
 console.log("RESULTS");
 console.log("------------------\n");
  
-readOrgInfo({ org: AppConfig.ORGANIZATION, time_period: "year" }) 
+readOrgInfo({ 
+  org: AppConfig.ORGANIZATION, 
+  time_period: "year",
+  per_page: 50 
+}) 
 .then((data) => console.log("\n%s\n", JSON.stringify(data, null, 2)))
 .catch(console.error);
 
