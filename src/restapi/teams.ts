@@ -19,3 +19,32 @@ export async function* listTeams(params: ListTeamsParameters): AsyncGenerator<Te
   } 
 }
 
+type ListTeamReposInOrgParameters = RestEndpointMethodTypes["teams"]["listReposInOrg"]["parameters"];
+type TeamRepoDetails = components["schemas"]["repository"];
+
+export async function* listTeamReposInOrg(params: ListTeamReposInOrgParameters): AsyncGenerator<TeamRepoDetails, void, unknown> {
+  const parameters = applyHeaders(params);
+  
+  const iterator = await octokit.paginate.iterator(octokit.rest.teams.listReposInOrg, parameters);
+
+  for await (const { data: repos } of iterator) {
+    for (const repo of repos) {
+      yield repo;
+    }
+  }
+}
+
+type ListTeamMembersParameters = RestEndpointMethodTypes["teams"]["listMembersInOrg"]["parameters"];
+type TeamMemberDetails = components["schemas"]["simple-user"];
+
+export async function* listTeamMembers(params: ListTeamMembersParameters): AsyncGenerator<TeamMemberDetails, void, unknown> {
+  const parameters = applyHeaders(params);
+  
+  const iterator = await octokit.paginate.iterator(octokit.rest.teams.listMembersInOrg, parameters);
+
+  for await (const { data: members } of iterator) {
+    for (const member of members) {
+      yield member;
+    }
+  }
+}

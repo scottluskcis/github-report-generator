@@ -6,7 +6,7 @@ console.log("RESULTS");
 console.log("------------------\n");
  
 readOrgInfo({ org: AppConfig.ORGANIZATION, time_period: "year" }) 
-.then((data) => console.log(JSON.stringify(data, null, 2)))
+.then((data) => console.log("\n%s\n", JSON.stringify(data, null, 2)))
 .catch(console.error);
 
 /*
