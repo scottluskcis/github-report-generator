@@ -2,7 +2,7 @@ import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import { components } from "@octokit/openapi-types/types";
 import { applyHeaders, getOctokit } from "../shared/octokit-client";
 
-const octokit = getOctokit({ token_type: "pat-fine-grained" });
+const octokit = getOctokit();
 
 // --------------------------------------------------
 // listReposForOrg 

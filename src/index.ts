@@ -1,4 +1,4 @@
-import { getOrgActivity } from "./data/organization";
+import { getOrgActivity } from "./data/activity-data";
 import { AppConfig } from "./shared/app-config";
  
 console.log("\n------------------");

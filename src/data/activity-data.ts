@@ -1,7 +1,5 @@
 import { isAfter, parseISO } from "date-fns";
-import {
-  listCopilotSeats, 
-} from "../restapi/copilot";
+import { listCopilotSeats } from "../restapi/copilot";
 import { listRepoActivities, listReposForOrg } from "../restapi/repositories";
 import {
   listTeamMembers,
@@ -58,7 +56,12 @@ export async function getOrgActivity({
     per_page,
   });
 
-  return { teams, copilot_seats: copilot_seat_assignees };
+  return { 
+    org,
+    time_period,
+    teams, 
+    copilot_seat_assignees 
+  };
 }
 
 async function getCopilotSeatsByOrg({
