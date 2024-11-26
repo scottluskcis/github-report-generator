@@ -7,7 +7,7 @@ import {
   listTeams,
 } from "../restapi/teams";
 
-type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
+export type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
 
 interface ActiveUser {
   user: string;

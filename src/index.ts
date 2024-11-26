@@ -1,17 +1,61 @@
-import { getOrgActivity } from "./data/activity-data";
+import { getOrgActivity, TimePeriodType } from "./data/activity-data";
 import { AppConfig } from "./shared/app-config";
- 
-console.log("\n------------------");
-console.log("RESULTS");
-console.log("------------------\n");
- 
-getOrgActivity({ 
-  org: AppConfig.ORGANIZATION, 
-  time_period: "year",
-  per_page: 50 
-}) 
-.then((data) => console.log("\n%s\n", JSON.stringify(data, null, 2)))
-.catch(console.error);
+
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// function for setting up the data to be used in report
+async function generateData(): Promise<string | undefined> {
+  const dataFolderPath = path.resolve(__dirname, ".output");
+  const filePath = path.resolve(dataFolderPath, "data.json");
+
+  // file exists and generate is disabled then ignore 
+  if (fs.existsSync(filePath) && !AppConfig.GENERATE_DATA) {
+    console.log("Data generation is disabled and the file already exists. Exiting...");
+    return filePath;
+  } 
+
+  console.log("Generating data...");
+
+  const data = await getOrgActivity({
+    org: AppConfig.ORGANIZATION,
+    time_period: AppConfig.TIME_PERIOD as TimePeriodType,
+    per_page: 50,
+  });
+
+  // create output folder if it doesn't exist
+  if (!fs.existsSync(dataFolderPath)) {
+    fs.mkdirSync(dataFolderPath);
+  }
+
+  // save data to a JSON file
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+
+  console.log(`Data saved to ${filePath}`);
+
+  return filePath;
+}
+
+// function to orchestrate the process
+async function run() {
+  console.log("----------------------------------------------");
+  console.log(`Process started at: ${new Date().toISOString()}`);
+
+  // data 
+  const json_data_path = await generateData();
+
+  console.log(`Process ended at: ${new Date().toISOString()}`);
+  console.log("----------------------------------------------");
+}
+
+// run the process
+run().catch(console.error);
+
 
 /*
 
