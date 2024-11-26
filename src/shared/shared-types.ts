@@ -12,6 +12,12 @@ export interface CopilotSeatAssignee {
   last_activity_at: string;
 }
 
+export interface EnterpriseCopilotUser {
+  user: CopilotSeatAssignee;
+  repos: string[];
+  teams: string[]; 
+}
+
 export interface ActiveUser {
   user: string;
   last_active: string;

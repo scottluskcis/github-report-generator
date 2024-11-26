@@ -11,7 +11,7 @@ const octokit = getOctokit();
 
 type ListCopilotSeatsParams = RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["parameters"];
 type ListCopilotSeatResponseData = RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["response"]["data"];
-type CopilotSeatDetails = components["schemas"]["copilot-seat-details"];
+export type CopilotSeatDetails = components["schemas"]["copilot-seat-details"];
 
 export async function listCopilotSeats(params: ListCopilotSeatsParams): Promise<CopilotSeatDetails[]> {
   const parameters = applyHeaders(params);  
@@ -31,13 +31,19 @@ type ListCopilotEnterpriseSeatsParams = Omit<ListCopilotSeatsParams, 'org'> & {
   enterprise: string;
 };
 
-export async function listCopilotEnterpriseSeats(params: ListCopilotEnterpriseSeatsParams): Promise<CopilotSeatDetails[]> {
+export async function* listCopilotEnterpriseSeats(params: ListCopilotEnterpriseSeatsParams): AsyncGenerator<CopilotSeatDetails, void, unknown> {
   const parameters = applyHeaders(params);  
 
-  // TODO: workaround until this endpoint is in the generated types
-  const endpoint = "GET /enterprises/{enterprise}/copilot/billing/seats";
-  const response = await octokit.paginate(endpoint, parameters);
+  // TODO: workaround - needs classic PAT to work
+  const myocto = getOctokit('pat-classic');
 
-  const seats: CopilotSeatDetails[] = response.flatMap((page: ListCopilotSeatResponseData) => page.seats);
-  return seats;
+  // TODO: workaround until this endpoint is in the generated types
+  const endpoint = 'GET /enterprises/{enterprise}/copilot/billing/seats';
+  const iterator = await myocto.paginate.iterator(endpoint, parameters);
+
+  for await (const { data } of iterator) {
+    for (const seat of data.seats) {
+      yield seat;
+    }
+  } 
 }

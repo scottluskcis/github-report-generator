@@ -4,6 +4,7 @@ import { AppConfig } from "./shared/app-config";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { getEnterpriseInfo } from "./data/enterprise-activity-data";
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +49,13 @@ async function run() {
 
   // data 
   const json_data_path = await generateData();
+
+  const enterprise = AppConfig.ENTERPRISE;
+  const copilot_seats = await getEnterpriseInfo({ 
+    enterprise, 
+    per_page: 100
+  });
+  console.log(copilot_seats);
 
   console.log(`Process ended at: ${new Date().toISOString()}`);
   console.log("----------------------------------------------");

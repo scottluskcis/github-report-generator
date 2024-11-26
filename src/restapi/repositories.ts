@@ -75,3 +75,28 @@ export async function* listReposForUser(params: ListReposForUserParameters): Asy
     }
   }
 }
+
+// --------------------------------------------------
+// listRepoTeams
+// reference: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-teams
+// --------------------------------------------------
+
+type ListRepoTeamsParameters = RestEndpointMethodTypes["repos"]["listTeams"]["parameters"];
+type Team = components["schemas"]["team"];
+
+export async function* listRepoTeams(
+  params: ListRepoTeamsParameters
+): AsyncGenerator<Team, void, unknown> {
+  const parameters = applyHeaders(params);
+  
+  const iterator = await octokit.paginate.iterator(
+    octokit.rest.repos.listTeams,
+    parameters
+  );
+
+  for await (const { data: teams } of iterator) {
+    for (const team of teams) {
+      yield team;
+    }
+  }
+}
