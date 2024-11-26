@@ -1,4 +1,4 @@
-import { getOrgActivity, TimePeriodType } from "./data/activity-data";
+import { getOrgActivity } from "./data/activity-data";
 import { AppConfig } from "./shared/app-config";
 
 import * as fs from "fs";
@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 // function for setting up the data to be used in report
 async function generateData(): Promise<string | undefined> {
   const dataFolderPath = path.resolve(__dirname, ".output");
-  const filePath = path.resolve(dataFolderPath, "data.json");
+  const filePath = path.resolve(dataFolderPath, "activity_data.json");
 
   // file exists and generate is disabled then ignore 
   if (fs.existsSync(filePath) && !AppConfig.GENERATE_DATA) {
@@ -24,7 +24,7 @@ async function generateData(): Promise<string | undefined> {
 
   const data = await getOrgActivity({
     org: AppConfig.ORGANIZATION,
-    time_period: AppConfig.TIME_PERIOD as TimePeriodType,
+    time_period: AppConfig.TIME_PERIOD,
     per_page: 50,
   });
 

@@ -1,0 +1,32 @@
+export type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
+
+export interface ActivityData {
+  org: string;
+  time_period: TimePeriodType;
+  teams: TeamSummary[];
+  copilot_seat_assignees: CopilotSeatAssignee[];
+}
+
+export interface CopilotSeatAssignee {
+  assignee: string;
+  last_activity_at: string;
+}
+
+export interface ActiveUser {
+  user: string;
+  last_active: string;
+}
+
+export interface RepoSummary {
+  repo_name: string;
+  repo_full_name: string;
+  active_users: ActiveUser[];
+}
+
+export interface TeamSummary {
+  team_slug?: string;
+  team_name: string;
+  team_description?: string;
+  members?: string[];
+  repos: RepoSummary[];
+}

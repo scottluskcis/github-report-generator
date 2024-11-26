@@ -6,27 +6,8 @@ import {
   listTeamReposInOrg,
   listTeams,
 } from "../restapi/teams";
+import { ActiveUser, ActivityData, RepoSummary, TeamSummary, TimePeriodType } from "../shared/shared-types";
 
-export type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
-
-interface ActiveUser {
-  user: string;
-  last_active: string;
-}
-
-interface RepoSummary {
-  repo_name: string;
-  repo_full_name: string;
-  active_users: ActiveUser[];
-}
-
-interface TeamSummary {
-  team_slug?: string;
-  team_name: string;
-  team_description?: string;
-  members?: string[];
-  repos: RepoSummary[];
-}
 
 export async function getOrgActivity({
   org,
@@ -36,7 +17,7 @@ export async function getOrgActivity({
   org: string;
   time_period: TimePeriodType;
   per_page: number;
-}): Promise<any> {
+}): Promise<ActivityData> {
   const seats_list = await getCopilotSeatsByOrg({
     org,
     time_period,
