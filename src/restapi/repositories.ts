@@ -13,12 +13,12 @@ export async function* listReposForOrg(
 ): AsyncGenerator<RepositoryDetails, void, unknown> {
   const parameters = applyHeaders(params);
 
-  const response = await octokit.paginate.iterator(
+  const iterator = await octokit.paginate.iterator(
     octokit.rest.repos.listForOrg,
     parameters
   );
 
-  for await (const { data: repos } of response) {
+  for await (const { data: repos } of iterator) {
     for (const repo of repos) {
       yield repo;
     }
@@ -32,6 +32,7 @@ export async function* listRepoActivities(
   params: ListRepoActivitiesParameters
 ): AsyncGenerator<ActivityDetail, void, unknown> {
   const parameters = applyHeaders(params);
+  
   const iterator = await octokit.paginate.iterator(
     octokit.rest.repos.listActivities,
     parameters

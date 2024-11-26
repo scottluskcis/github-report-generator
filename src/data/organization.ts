@@ -3,10 +3,8 @@ import {
   listCopilotSeats,
   filterCopilotSeats,
   CopilotSeatDetails,
-} from "../endpoints/copilot-user-management";
-import { listRepoActivities, listReposForOrg } from "../endpoints/repositories";
-
-import { AppConfig } from "../shared/app-config";
+} from "../restapi/copilot";
+import { listRepoActivities, listReposForOrg } from "../restapi/repositories";
 
 type TimePeriodType = "day" | "week" | "month" | "quarter" | "year";
 
@@ -80,14 +78,12 @@ async function getOrgUserActivity({
       repo_owner: repo.owner.login,
       time_period: time_period,
     });
-
-    if(activeUsers.length > 0) {
-      orgActivity.push({
-        org_name: org,
-        repo_name: repo.name,
-        active_users: activeUsers,
-      });
-    }
+ 
+    orgActivity.push({
+      org_name: org,
+      repo_name: repo.name,
+      active_users: activeUsers,
+    }); 
   }
 
   return orgActivity;
