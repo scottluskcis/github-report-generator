@@ -15,7 +15,7 @@ export interface CopilotSeatAssignee {
 export interface EnterpriseCopilotUser {
   user: CopilotSeatAssignee;
   repos: string[];
-  teams: string[]; 
+  org_data: ActivityData;
 }
 
 export interface ActiveUser {
