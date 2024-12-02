@@ -2,14 +2,34 @@ import { Octokit } from "octokit";
 import { AppConfig } from "./app-config";
 
 // see: https://github.com/octokit/octokit.js/?tab=readme-ov-file#octokit-api-client
-export function getOctokit(token_type?: 'pat-classic' | 'pat-fine-grained'
+export function getOctokit(
+  token_type?: "pat-classic" | "pat-fine-grained" | "pat-by-org",
+  params?: any
 ): Octokit {
-  const token = token_type == 'pat-classic' ? AppConfig.GITHUB_TOKEN_CLASSIC : AppConfig.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error("GitHub token not found");
-  }
+  // lookup by org 
+  if (token_type == "pat-by-org") {
+    if (!params || !params.org) {
+      throw new Error("GitHub org not provided");
+    }
 
-  return new Octokit({ auth: token });
+    const token = AppConfig.GITHUB_TOKENS_BY_ORG[params.org];
+    if (!token) {
+      throw new Error("GitHub token not found");
+    }
+    return new Octokit({ auth: token });
+  } 
+  // lookup by token type
+  else {
+    const token =
+      token_type == "pat-classic"
+        ? AppConfig.GITHUB_TOKEN_CLASSIC
+        : AppConfig.GITHUB_TOKEN;
+    if (!token) {
+      throw new Error("GitHub token not found");
+    }
+
+    return new Octokit({ auth: token });
+  }
 }
 
 export function getRestApiHeaders(): { [key: string]: string } {
@@ -20,7 +40,7 @@ export function getRestApiHeaders(): { [key: string]: string } {
 }
 
 export function applyHeaders<Parameters>(params: Parameters): Parameters {
-    const headers = getRestApiHeaders();
-    const combinedParams = { ...params, headers };
-    return combinedParams;
+  const headers = getRestApiHeaders();
+  const combinedParams = { ...params, headers };
+  return combinedParams;
 }

@@ -17,32 +17,19 @@ export async function getEnterpriseInfo({
     per_page,
   });
 
-  // for each seat we have the following details:
-  // assignee
-  // organization
-  // for each org we could get the details to determine what teams user part of
-
-  //const org_activity: { [key: string]: any } = {};
   const seats: EnterpriseCopilotSeat[] = [];
   for await (const seat of copilot_seats_iterator) {
-    const assignee = `${seat.assignee.login}`;
-    //console.log("Assignee: %s", assignee);
-
+    const assignee = seat.assignee;
+    const assignee_login = `${assignee.login}`;
+    
     const obj = seat as any;
     const org = obj.organization.login;
-    //console.log("Organization: %s", org);
-
+    
     seats.push({ 
-        assignee: assignee, 
+        assignee: assignee_login, 
+        last_activity_at: seat.last_activity_at,
         organization: org 
     });
-
-    // the org that assigned the seat
-    // if (!org_activity[org]) {
-    //   const org_data = await getOrgActivity({ org, time_period, per_page });
-    //   org_activity[org] = org_data;
-    // }
-    //console.log(seat);
   }
   return {
     enterprise,

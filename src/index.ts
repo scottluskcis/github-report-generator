@@ -2,6 +2,7 @@ import { getOrgActivity } from "./data/org-activity-data";
 import { AppConfig } from "./shared/app-config";
 import { getEnterpriseInfo } from "./data/enterprise-activity-data";
 import { getFilePath, writeToFileSync } from "./shared/file-utils";
+import { ActivityData } from "./shared/shared-types";
 
 
 // function for setting up the data to be used in report
@@ -15,11 +16,16 @@ async function generateOrgData(): Promise<string | undefined> {
     return file_path;
   } 
 
-  const data = await getOrgActivity({
-    org: AppConfig.ORGANIZATION,
-    time_period: AppConfig.TIME_PERIOD,
-    per_page: 50,
-  });
+  const orgs = AppConfig.ORGANIZATION.split(",");
+  const data: { [key: string]: ActivityData } = {};
+  for (const org of orgs) {
+    const org_data = await getOrgActivity({
+      org,
+      time_period: AppConfig.TIME_PERIOD,
+      per_page: 50,
+    });
+    data[org] = org_data;
+  }
 
   writeToFileSync(data, file_name);
    
@@ -77,5 +83,6 @@ NOTES:
 - Some endpoints are not documented in the octokit api such as list enterprise copilot seats and return a 404 if using an iterator
 - Just being a member of an enterprise didn't give access to the org until I added self to org
 - I ran into some issues trying to get repo info for orgs, a fine grained token seemed to fix this
+- I had to generate a fine grained pat for each org to get the data I needed
 
 */

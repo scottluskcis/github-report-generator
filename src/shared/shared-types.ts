@@ -44,5 +44,6 @@ export interface EnterpriseCopilotSeats {
 
 export interface EnterpriseCopilotSeat {
   assignee: string;
+  last_activity_at: string | null | undefined;
   organization: string;
 }
