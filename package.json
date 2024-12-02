@@ -2,7 +2,11 @@
   "name": "copilot-usage-metrics",
   "version": "1.0.0",
   "description": "Utility for capturing usage metrics",
-  "main": "index.js",
+  "exports": "./src/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "tsc && node dist/index.js",
@@ -26,5 +30,11 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@octokit/openapi-types": "^22.2.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.4.5",
+    "octokit": "^4.0.2"
   }
 }
