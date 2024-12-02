@@ -36,3 +36,13 @@ export interface TeamSummary {
   members?: string[];
   repos: RepoSummary[];
 }
+
+export interface EnterpriseCopilotSeats {
+  seats: EnterpriseCopilotSeat[];
+  enterprise: string;
+}
+
+export interface EnterpriseCopilotSeat {
+  assignee: string;
+  organization: string;
+}

@@ -1,27 +1,19 @@
 import { getOrgActivity } from "./data/org-activity-data";
 import { AppConfig } from "./shared/app-config";
-
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
 import { getEnterpriseInfo } from "./data/enterprise-activity-data";
+import { getFilePath, writeToFileSync } from "./shared/file-utils";
 
-// Get the directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // function for setting up the data to be used in report
-async function generateData(): Promise<string | undefined> {
-  const dataFolderPath = path.resolve(__dirname, ".output");
-  const filePath = path.resolve(dataFolderPath, "activity_data.json");
+async function generateOrgData(): Promise<string | undefined> {  
+  const file_name = "activity_data.json";
+  const { file_exists, file_path } = getFilePath(file_name);
 
   // file exists and generate is disabled then ignore 
-  if (fs.existsSync(filePath) && !AppConfig.GENERATE_DATA) {
+  if (file_exists && !AppConfig.GENERATE_DATA) {
     console.log("Data generation is disabled and the file already exists. Exiting...");
-    return filePath;
+    return file_path;
   } 
-
-  console.log("Generating data...");
 
   const data = await getOrgActivity({
     org: AppConfig.ORGANIZATION,
@@ -29,17 +21,30 @@ async function generateData(): Promise<string | undefined> {
     per_page: 50,
   });
 
-  // create output folder if it doesn't exist
-  if (!fs.existsSync(dataFolderPath)) {
-    fs.mkdirSync(dataFolderPath);
-  }
+  writeToFileSync(data, file_name);
+   
+  return file_path;
+}
 
-  // save data to a JSON file
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+async function generateEnterpriseData(): Promise<string | undefined> {
+  const file_name = "enterprise_data.json";
+  const { file_exists, file_path } = getFilePath(file_name);
 
-  console.log(`Data saved to ${filePath}`);
+  // file exists and generate is disabled then ignore 
+  if (file_exists && !AppConfig.GENERATE_DATA) {
+    console.log("Data generation is disabled and the file already exists. Exiting...");
+    return file_path;
+  } 
 
-  return filePath;
+  const data = await getEnterpriseInfo({ 
+    enterprise: AppConfig.ENTERPRISE, 
+    per_page: 100,
+    time_period: "year"
+  });
+
+  writeToFileSync(data, file_name);
+   
+  return file_path;
 }
 
 // function to orchestrate the process
@@ -48,14 +53,13 @@ async function run() {
   console.log(`Process started at: ${new Date().toISOString()}`);
 
   // data 
-  const json_data_path = await generateData();
+  console.log("Generating org data...");
+  const org_data_path = await generateOrgData();
+  console.log(`Org Data saved to ${org_data_path}`);
 
-  const enterprise = AppConfig.ENTERPRISE;
-  const copilot_seats = await getEnterpriseInfo({ 
-    enterprise, 
-    per_page: 100
-  });
-  console.log(copilot_seats);
+  console.log("Generating enterprise data...");
+  const enterprise_data_path = await generateEnterpriseData();
+  console.log(`Enterprise Data saved to ${enterprise_data_path}`);
 
   console.log(`Process ended at: ${new Date().toISOString()}`);
   console.log("----------------------------------------------");
