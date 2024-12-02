@@ -6,7 +6,7 @@ import {
   listTeamReposInOrg,
   listTeams,
 } from "../restapi/teams";
-import { ActiveUser, ActivityData, RepoSummary, TeamSummary, TimePeriodType } from "../shared/shared-types";
+import { UserSummary, ActivityData, RepoSummary, TeamSummary, TimePeriodType } from "../shared/shared-types";
 
 export async function getOrgActivity({
   org,
@@ -201,7 +201,7 @@ async function getActiveUsers({
   repo_owner: string;
   time_period: TimePeriodType;
   per_page: number;
-}): Promise<ActiveUser[]> {
+}): Promise<UserSummary[]> {
   // get activities for the repo for a given time period
   const iterator = listRepoActivities({
     owner: repo_owner,
@@ -227,7 +227,7 @@ async function getActiveUsers({
     }
   }
 
-  const activeUsers: ActiveUser[] = Object.keys(activity_lookup).map((user) => {
+  const activeUsers: UserSummary[] = Object.keys(activity_lookup).map((user) => {
     return { user, last_active: activity_lookup[user] };
   });
 

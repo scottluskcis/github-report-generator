@@ -18,15 +18,17 @@ export interface EnterpriseCopilotUser {
   org_data: ActivityData;
 }
 
-export interface ActiveUser {
+export interface UserSummary {
   user: string;
   last_active: string;
+  has_copilot_seat?: boolean;
+  has_copilot_seat_in_org?: boolean; 
 }
 
 export interface RepoSummary {
   repo_name: string;
   repo_full_name: string;
-  active_users: ActiveUser[];
+  active_users: UserSummary[];
 }
 
 export interface TeamSummary {
@@ -34,6 +36,7 @@ export interface TeamSummary {
   team_name: string;
   team_description?: string;
   members?: string[];
+  members_without_copilot?: string[];
   repos: RepoSummary[];
 }
 

@@ -28,3 +28,21 @@ export function writeToFileSync(data: any, file_name: string): string {
 
   return file_path;
 }
+
+export function readJsonFile<T>(file_name: string): T | null {
+  const { file_path } = getFilePath(file_name);
+
+  if (!fs.existsSync(file_path)) {
+    console.error(`File not found: ${file_path}`);
+    return null;
+  }
+
+  const fileContent = fs.readFileSync(file_path, 'utf-8');
+  try {
+    const data: T = JSON.parse(fileContent);
+    return data;
+  } catch (error) {
+    console.error(`Error parsing JSON from file: ${file_path}`, error);
+    return null;
+  }
+}

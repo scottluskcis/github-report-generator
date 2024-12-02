@@ -3,6 +3,7 @@ import { AppConfig } from "./shared/app-config";
 import { getEnterpriseInfo } from "./data/enterprise-activity-data";
 import { getFilePath, writeToFileSync } from "./shared/file-utils";
 import { ActivityData } from "./shared/shared-types";
+import { run_summary_report, summarize_by_user } from "./report/identify-copilot-users";
 
 
 // function for setting up the data to be used in report
@@ -66,6 +67,10 @@ async function run() {
   console.log("Generating enterprise data...");
   const enterprise_data_path = await generateEnterpriseData();
   console.log(`Enterprise Data saved to ${enterprise_data_path}`);
+
+  console.log("Generating summary report for users...");
+  const summary_report_path = run_summary_report();
+  console.log(`Summary report saved to: ${summary_report_path}`);
 
   console.log(`Process ended at: ${new Date().toISOString()}`);
   console.log("----------------------------------------------");
