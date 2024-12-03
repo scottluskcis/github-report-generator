@@ -26,9 +26,6 @@ Tools for generating data that can be used in reports
 
 5. Most of the REST API endpoints used in this repository use a Fine-Grained Access Token. Follow the steps at [Creating a fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) to generate the value to be used for `GITHUB_TOKEN` in the settings shared in step 4 and be sure to copy the generated token as it is needed in the next step. 
 
-    > [!NOTE]
-    > You will want to set the organization you are generating the report for as the owner of the Fine-Grained PAT
-
     1. Repository access should be set to **All repositories**
     2. For Repository Permissions set **Read Only** access for the following areas: [Commit statuses, Contents, Discussions, Issues, Metadata, Pages, Pull requests]
     3. For Organization permissions set **Read Only** access for the following areas: [GitHub Copilot Business, Members]
@@ -37,13 +34,15 @@ Tools for generating data that can be used in reports
 6. For `GITHUB_TOKEN` replace `<your token here>` with the value generated in step 5
 7. For `ORGANIZATION` replace `<your org name here>` with the name of the org to query against
 
-    > [!IMPORTANT]
-    > If you do not have access to the org (i.e. are an Org Owner or a Member with Read access) then you will receive 404 or 403 errors
-
 8. Change the `TIME_PERIOD` to the time period you want to query activity for.
 9.  To execute the application run `npm run dev` for example
 10. The output should exist in the `.output` folder
 
+> [!NOTE]
+> You will want to set the organization you are generating the report for as the owner of the Fine-Grained PAT
+
+> [!IMPORTANT]
+> If you do not have access to the org (i.e. are an Org Owner or a Member with Read access) then you will receive 404 or 403 errors
 
 ## Reports
 
@@ -64,16 +63,16 @@ A CSV file named `copilot_associations.csv` is generated for this report contain
 * **association**: The association the user has noted in this report. This will either be the name of a Team in the org or the name of a Repository in the org
 * **association_type**: The type of association the user has 
 
-    > [!NOTE]
-    > This will either be **team** indicating the user is a member of a team within the org or **repository** indicating the user is an active user in one of the repositories
+> [!NOTE]
+> This will either be **team** indicating the user is a member of a team within the org or **repository** indicating the user is an active user in one of the repositories
 
-    > [!IMPORTANT]
-    > The TIME_PERIOD configuration value noted in the setup section above determines what time period a user is considered to be an active user
+> [!IMPORTANT]
+> The TIME_PERIOD configuration value noted in the setup section above determines what time period a user is considered to be an active user
 
 * **related_copilot_user_name**: If any other users found within the team or repository have a copilot license they are indicated here as an association to the user that doesn't have a copilot license
   
-    > [!NOTE]
-    > If the value is "Unknown" then this indicates no other active users in the repository or team members were found with a copilot seat for the org
+> [!NOTE]
+> If the value is "Unknown" then this indicates no other active users in the repository or team members were found with a copilot seat for the org
 
-    > [!NOTE]
-    > IF the value is "Self" then this indicates this is a user that has a copilot seat assigned from the org any they exist in the repostiory or team. You can filter the report to see what teams and repositories a user with a copilot seat in the org may be currently active in
+> [!NOTE]
+> IF the value is "Self" then this indicates this is a user that has a copilot seat assigned from the org any they exist in the repostiory or team. You can filter the report to see what teams and repositories a user with a copilot seat in the org may be currently active in
