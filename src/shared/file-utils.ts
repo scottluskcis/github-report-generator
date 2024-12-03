@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "url"; 
+import { writeToPath } from "fast-csv";
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -45,4 +46,19 @@ export function readJsonFile<T>(file_name: string): T | null {
     console.error(`Error parsing JSON from file: ${file_path}`, error);
     return null;
   }
+}
+
+export function writeToCsv(data: any[], file_name: string): string {
+  const { file_path, folder_path } = getFilePath(file_name);
+  
+  // create output folder if it doesn't exist
+  if (!fs.existsSync(folder_path)) {
+    fs.mkdirSync(folder_path);
+  }
+
+  writeToPath(file_path, data, { headers: true })
+    .on('error', err => console.error(err))
+    .on('finish', () => console.log(`CSV saved to ${file_path}`));
+
+  return file_path;
 }

@@ -29,6 +29,7 @@ export interface RepoSummary {
   repo_name: string;
   repo_full_name: string;
   active_users: UserSummary[];
+  members_without_copilot?: string[];
 }
 
 export interface TeamSummary {
@@ -49,4 +50,13 @@ export interface EnterpriseCopilotSeat {
   assignee: string;
   last_activity_at: string | null | undefined;
   organization: string;
+}
+
+export interface CopilotAssociation {
+  org_name: string; 
+  user_name: string;
+  user_has_org_copilot_seat: boolean;
+  association_type: 'team' | 'repository';
+  association: string;
+  related_copilot_user_name: string;
 }
