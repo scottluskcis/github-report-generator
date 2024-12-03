@@ -30,7 +30,7 @@ Tools for generating data that can be used in reports
     > You will want to set the organization you are generating the report for as the owner of the Fine-Grained PAT
 
     1. Repository access should be set to **All repositories**
-    2. For Repository Permissions set **Read Only** access for the following areas: [Commit statuses, Contents, Discussions, Issues, Pull requests]
+    2. For Repository Permissions set **Read Only** access for the following areas: [Commit statuses, Contents, Discussions, Issues, Metadata, Pages, Pull requests]
     3. For Organization permissions set **Read Only** access for the following areas: [GitHub Copilot Business, Members]
     4. Click Generate Token
 
