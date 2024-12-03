@@ -10,7 +10,7 @@ export class AppConfig {
   );
   public static readonly ENTERPRISE: string = AppConfig.getEnvVar("ENTERPRISE");
   public static readonly API_VERSION: string =
-    AppConfig.getEnvVar("GITHUB_API_VERSION");
+    AppConfig.getEnvVar("GITHUB_API_VERSION", "2022-11-28");
   public static readonly ORGANIZATION: string =
     AppConfig.getEnvVar("ORGANIZATION");
   public static readonly TIME_PERIOD: TimePeriodType = AppConfig.getEnvVar("TIME_PERIOD", "month") as TimePeriodType;

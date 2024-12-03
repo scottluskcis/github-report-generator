@@ -44,7 +44,18 @@ function get_team_associations({
 }: { 
   org_data: ActivityData; 
 }): CopilotAssociation[] {
-  const copilot_seats = org_data.copilot_seats;
+  const copilot_seats = org_data.copilot_seats; 
+
+  const create_association = (user_name: string, association: string, has_copilot_seat: boolean, related_copilot_user_name: string): CopilotAssociation => {
+    return {
+      org_name: org_data.org, 
+      user_name,
+      user_has_org_copilot_seat: has_copilot_seat,
+      association: association,
+      association_type: 'team',
+      related_copilot_user_name
+    };
+  }
 
   const results: CopilotAssociation[] = [];
   for(const team of org_data.teams) { 
@@ -65,16 +76,22 @@ function get_team_associations({
       return seat == null;
     });
 
+    const members_paired_with_related: string[] = [];
     for(const member_name of team_members_without_copilot) { 
+      // pair any copilot users with this team member
       for(const member_with_copilot of team_members_with_copilot) {
-        results.push({
-          org_name: org_data.org,
-          user_name: member_name,
-          association: team.team_name,
-          association_type: 'team',
-          related_copilot_user_name: member_with_copilot
-        });
+        results.push(create_association(member_name, team.team_name, false, member_with_copilot)); 
+        members_paired_with_related.push(member_name);
       }
+      // include in report this team member but indicate no relation to a copilot user directly in team
+      if(!members_paired_with_related.includes(member_name)) { 
+        results.push(create_association(member_name, team.team_name, false, "Unknown"));
+      }
+    }
+
+    // track users that do have copilot seats
+    for(const member_name of team_members_with_copilot) {  
+      results.push(create_association(member_name, team.team_name, true, "Self")); 
     }
   }
   return results;
@@ -86,6 +103,17 @@ function get_repository_associations({
   org_data: ActivityData; 
 }) {
   const copilot_seats = org_data.copilot_seats;
+
+  const create_association = (user_name: string, association: string, has_copilot_seat: boolean, related_copilot_user_name: string): CopilotAssociation => {
+    return {
+      org_name: org_data.org, 
+      user_name,
+      user_has_org_copilot_seat: has_copilot_seat,
+      association: association,
+      association_type: 'repository',
+      related_copilot_user_name
+    };
+  }
 
   const results: CopilotAssociation[] = [];
   for(const team of org_data.teams) {
@@ -118,24 +146,17 @@ function get_repository_associations({
       for(const active_repo_member of repo_members_without_copilot) { 
         // check other active contributors in repo
         for(const member_with_copilot of repo_members_with_copilot) {
-          results.push({
-            org_name: org_data.org,
-            user_name: active_repo_member.user,
-            association: repo.repo_full_name,
-            association_type: 'repository',
-            related_copilot_user_name: member_with_copilot.user
-          });
+          results.push(create_association(active_repo_member.user, repo.repo_full_name, false, member_with_copilot.user));
         }
-        // there could be a a copilot member in the team association
+        // there could be a a copilot member in the team association to connect with
         for(const team_member_name of team_members_with_copilot) {
-          results.push({
-            org_name: org_data.org,
-            user_name: active_repo_member.user,
-            association: repo.repo_full_name,
-            association_type: 'repository',
-            related_copilot_user_name: team_member_name
-          });
+          results.push(create_association(active_repo_member.user, repo.repo_full_name, false, team_member_name));
         }
+      }
+
+      // active users that do have copilot seats 
+      for(const active_repo_member of repo_members_with_copilot) { 
+        results.push(create_association(active_repo_member.user, repo.repo_full_name, true, "Self"));
       }
     }
   }

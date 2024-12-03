@@ -55,6 +55,7 @@ export interface EnterpriseCopilotSeat {
 export interface CopilotAssociation {
   org_name: string; 
   user_name: string;
+  user_has_org_copilot_seat: boolean;
   association_type: 'team' | 'repository';
   association: string;
   related_copilot_user_name: string;
