@@ -2,6 +2,8 @@ import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import { components } from "@octokit/openapi-types/types";
 import { applyHeaders, getOctokit } from "../shared/octokit-client";
 
+const octokit = getOctokit();
+
 // --------------------------------------------------
 // listReposForOrg 
 // reference: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-organization-repositories
@@ -12,8 +14,7 @@ type RepositoryDetails = components["schemas"]["repository"];
 
 export async function* listReposForOrg(
   params: ListReposForOrgParameters
-): AsyncGenerator<RepositoryDetails, void, unknown> {
-  const octokit = getOctokit('pat-by-org', { org: params.org }); 
+): AsyncGenerator<RepositoryDetails, void, unknown> { 
   const parameters = applyHeaders(params);
 
   const iterator = await octokit.paginate.iterator(
@@ -39,7 +40,6 @@ type ActivityDetail = components["schemas"]["activity"];
 export async function* listRepoActivities(
   params: ListRepoActivitiesParameters
 ): AsyncGenerator<ActivityDetail, void, unknown> { 
-  const octokit = getOctokit('pat-by-org', { org: params.owner });
   const parameters = applyHeaders(params);
   
   const iterator = await octokit.paginate.iterator(
@@ -62,7 +62,6 @@ export async function* listRepoActivities(
 type ListReposForUserParameters = RestEndpointMethodTypes["repos"]["listForUser"]["parameters"];
 
 export async function* listReposForUser(params: ListReposForUserParameters): AsyncGenerator<RepositoryDetails, void, unknown> {
-  const octokit = getOctokit();
   const parameters = applyHeaders(params);
 
   const iterator = await octokit.paginate.iterator(
@@ -88,7 +87,6 @@ type Team = components["schemas"]["team"];
 export async function* listRepoTeams(
   params: ListRepoTeamsParameters
 ): AsyncGenerator<Team, void, unknown> {
-  const octokit = getOctokit('pat-by-org', { org: params.owner });
   const parameters = applyHeaders(params);
   
   const iterator = await octokit.paginate.iterator(

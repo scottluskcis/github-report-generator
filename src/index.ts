@@ -33,6 +33,7 @@ async function generateOrgData(): Promise<string | undefined> {
   return file_path;
 }
 
+// calling this requires classic PAT, the copilot seats data can come from org instead of enterprise
 async function generateEnterpriseData(): Promise<string | undefined> {
   const file_name = "enterprise_data.json";
   const { file_exists, file_path } = getFilePath(file_name);
@@ -63,10 +64,6 @@ async function run() {
   console.log("Generating org data...");
   const org_data_path = await generateOrgData();
   console.log(`Org Data saved to ${org_data_path}`);
-
-  console.log("Generating enterprise data...");
-  const enterprise_data_path = await generateEnterpriseData();
-  console.log(`Enterprise Data saved to ${enterprise_data_path}`);
 
   console.log("Generating summary report for users...");
   const summary_report_path = run_copilot_associations_report();
