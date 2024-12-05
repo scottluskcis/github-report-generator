@@ -48,6 +48,20 @@ export function readJsonFile<T>(file_name: string): T | null {
   }
 }
 
+export function appendToFile(file_name: string, data: any) {
+  const { file_path, folder_path } = getFilePath(file_name);
+  
+  // create output folder if it doesn't exist
+  if (!fs.existsSync(folder_path)) {
+    fs.mkdirSync(folder_path);
+  }
+
+  const json_data = JSON.stringify(data);
+  fs.appendFileSync(file_path, `${json_data}\n`);
+
+  return file_path;
+}
+
 export function writeToCsv(data: any[], file_name: string): string {
   const { file_path, folder_path } = getFilePath(file_name);
   
