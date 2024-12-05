@@ -3,8 +3,8 @@ import { AppConfig } from "./shared/app-config";
 import { getEnterpriseInfo } from "./data/enterprise-activity-data";
 import { getFilePath, writeToFileSync } from "./shared/file-utils";
 import { ActivityData } from "./shared/shared-types"; 
-import { run_copilot_associations_report } from "./report/copilot-associations-report";
-
+import { run_copilot_associations_report } from "./report/copilot-associations-report"; 
+import logger from "./shared/app-logger";
 
 // function for setting up the data to be used in report
 async function generateOrgData(): Promise<string | undefined> {  
@@ -58,25 +58,24 @@ async function generateEnterpriseData(): Promise<string | undefined> {
 // function to orchestrate the process
 async function run() {
   console.log("----------------------------------------------");
-  console.log(`Process started at: ${new Date().toISOString()}`);
+  logger.debug(`Process started at: ${new Date().toISOString()}`); 
 
   // data 
-  console.log("Generating org data...");
+  logger.debug("Generating org data...");
   const org_data_path = await generateOrgData();
-  console.log(`Org Data saved to ${org_data_path}`);
+  logger.info(`Org Data saved to ${org_data_path}`);
 
-  console.log("Generating summary report for users...");
+  logger.debug("Generating summary report for users...");
   const summary_report_path = run_copilot_associations_report();
-  console.log(`Summary report saved to: ${summary_report_path}`);
+  logger.info(`Summary report saved to: ${summary_report_path}`);
 
-  console.log(`Process ended at: ${new Date().toISOString()}`);
+  logger.debug(`Process ended at: ${new Date().toISOString()}`);
   console.log("----------------------------------------------");
 }
 
 // run the process
-run().catch(console.error);
-
-
+run();
+ 
 /*
 
 NOTES:
