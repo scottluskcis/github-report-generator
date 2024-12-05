@@ -19,6 +19,12 @@ export class AppConfig {
   public static readonly GITHUB_TOKENS_BY_ORG: { [key: string]: string } =
     AppConfig.getTokensByOrg(AppConfig.getEnvVar("GITHUB_TOKENS_BY_ORG"));
 
+  // logging settings
+  public static readonly MIN_LOG_LEVEL: number = parseInt(AppConfig.getEnvVar("MIN_LOG_LEVEL", "1"));
+  public static readonly LOG_TYPE: string = AppConfig.getEnvVar("LOG_TYPE", "pretty");  
+  public static readonly OUTPUT_LOG_TO_FILE: boolean = AppConfig.getEnvVar("OUTPUT_LOG_TO_FILE", "false").toLowerCase() === "true";
+  public static readonly HIDE_LOG_POSITION: boolean = AppConfig.getEnvVar("HIDE_LOG_POSITION", "true").toLowerCase() === "true";
+  
   private static getEnvVar(name: string, default_value: string = ""): string {
     const value = process.env[name];
     if (!value) {
