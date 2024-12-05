@@ -7,6 +7,7 @@ import {
   listTeams,
 } from "../restapi/teams";
 import { UserSummary, ActivityData, RepoSummary, TeamSummary, TimePeriodType } from "../shared/shared-types";
+import logger from "../shared/app-logger";
 
 export async function getOrgActivity({
   org,
@@ -17,18 +18,18 @@ export async function getOrgActivity({
   time_period: TimePeriodType;
   per_page: number;
 }): Promise<ActivityData> {
-  const seats_list = await getCopilotSeatsByOrg({
-    org,
-    per_page,
-  });
+  logger.trace("getOrgActivity", org);
 
-  const org_copilot_seats = seats_list.map((seat) => {
-    return {
-      assignee: seat.assignee.login,
-      last_activity_at: seat.last_activity_at,
-    };
-  });
-
+  logger.trace("listCopilotSeats", org);    
+  const org_copilot_seats: { assignee: string; last_activity_at: string }[] = [];
+  for await(const seat of listCopilotSeats({ org, per_page })) {
+    org_copilot_seats.push({
+      assignee: `${seat.assignee.login}`,
+      last_activity_at: `${seat.last_activity_at}`,
+    }); 
+  }
+  logger.info(`Found ${org_copilot_seats.length} copilot seats in org ${org}`);
+ 
   const teams = await getAllReposActivity({
     org,
     time_period,
@@ -41,22 +42,6 @@ export async function getOrgActivity({
     teams, 
     copilot_seats: org_copilot_seats 
   };
-}
-
-async function getCopilotSeatsByOrg({
-  org,
-  per_page,
-}: {
-  org: string;
-  per_page: number;
-}): Promise<any[]> {
-  const orgCopilotSeats = await listCopilotSeats({
-    org,
-    page: 1,
-    per_page,
-  });
-
-  return orgCopilotSeats;
 }
 
 async function getAllReposActivity({
@@ -101,15 +86,15 @@ async function getTeamsActivity({
 }): Promise<TeamSummary[]> {
   const teams: TeamSummary[] = [];
 
-  // teams within the org
-  const teamsIterator = listTeams({ org, per_page });
-  for await (const team of teamsIterator) {
+  // teams within the org 
+  logger.trace("listTeams for org", org);
+  for await (const team of listTeams({ org, per_page })) {
     const team_slug = team.slug;
 
     // repos within the team
-    const team_repos: RepoSummary[] = [];
-    const teamReposIterator = listTeamReposInOrg({ org, team_slug, per_page });
-    for await (const repo of teamReposIterator) {
+    const team_repos: RepoSummary[] = []; 
+    logger.trace("listTeamReposInOrg", org, team_slug);
+    for await (const repo of listTeamReposInOrg({ org, team_slug, per_page })) {
       // get the active users for the repo for this org
       const activeUsers = await getActiveUsers({
         repo_name: repo.name,
@@ -126,11 +111,12 @@ async function getTeamsActivity({
     }
 
     // members of the team
-    const team_members: string[] = [];
-    const teamMembersIterator = listTeamMembers({ org, team_slug, per_page });
-    for await (const member of teamMembersIterator) {
+    const team_members: string[] = []; 
+    logger.trace("listTeamMembers", org, team_slug);
+    for await (const member of listTeamMembers({ org, team_slug, per_page })) {
       team_members.push(member.login);
     }
+    logger.info(`Team ${team_slug} has ${team_members.length} members`);
 
     teams.push({
       team_slug: team_slug,
@@ -162,6 +148,7 @@ async function getOrgReposWithoutTeam({
   });
 
   const repos: RepoSummary[] = [];
+  logger.trace("listReposForOrg", org, "all");
   for await (const repo of reposListIterator) {
     // ignore for teams we have already pulled repos for
     if (team_repos.includes(repo.name)) {
@@ -181,6 +168,7 @@ async function getOrgReposWithoutTeam({
       active_users: activeUsers,
     });
   }
+  logger.info(`${repos.length} repos without a team in org ${org}`);
 
   const team_summary: TeamSummary = {
     team_name: "repos-no-team",
@@ -212,6 +200,7 @@ async function getActiveUsers({
 
   const activity_lookup: { [key: string]: string } = {};
 
+  logger.trace("getActiveUsers", repo_owner, repo_name);
   for await (const activity of iterator) {
     const user = activity.actor?.login ?? "unknown";
 
@@ -230,6 +219,8 @@ async function getActiveUsers({
   const activeUsers: UserSummary[] = Object.keys(activity_lookup).map((user) => {
     return { user, last_active: activity_lookup[user] };
   });
+
+  logger.info(`${activeUsers.length} active users found for repo`, repo_name, repo_owner);
 
   return activeUsers;
 }
