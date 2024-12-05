@@ -76,3 +76,44 @@ A CSV file named `copilot_associations.csv` is generated for this report contain
 
 > [!NOTE]
 > IF the value is "Self" then this indicates this is a user that has a copilot seat assigned from the org any they exist in the repostiory or team. You can filter the report to see what teams and repositories a user with a copilot seat in the org may be currently active in
+
+## Settings
+
+When running this code you can create a local `.env.local` file as noted [here](#setup-and-execution). Here is a list of settings
+
+### Required Settings
+
+Required settings necessary for the app to run
+
+```
+# access token used with octokit
+GITHUB_TOKEN=<your token here>
+
+# the organization to query against
+ORGANIZATION=<your org name here>
+```
+
+### Optional Settings
+
+Optional settings and their defaut values if not specified
+
+```
+# the version of the GitHub API to use
+GITHUB_API_VERSION=2022-11-28
+
+# the time period to retrieve data for 
+# valid values are day, week, month, quarter, or year 
+TIME_PERIOD=month
+
+# pretty, json, hidden
+LOG_TYPE=pretty
+
+# 0: silly, 1: trace, 2: debug, 3: info, 4: warn, 5: error, 6: fatal
+MIN_LOG_LEVEL=1
+
+# whether or not to output the log to a file called logs_yyyy-MM-dd.txt
+OUTPUT_LOG_TO_FILE=false
+
+# true to hide the log position in the console output and file output
+HIDE_LOG_POSITION=true
+```

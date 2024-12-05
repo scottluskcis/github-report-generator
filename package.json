@@ -9,8 +9,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "start": "tsc && node --enable-source-maps --experimental-specifier-resolution=node --no-warnings --loader ts-node/esm dist/index.js",
+    "dev": "nodemon --enable-source-maps --experimental-specifier-resolution=node --no-warnings --loader ts-node/esm src/index.ts",
     "lint": "eslint ./src/**/*.ts",
     "test": "jest",
     "test:watch": "jest --watch"
@@ -36,6 +36,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "fast-csv": "^5.0.2",
-    "octokit": "^4.0.2"
+    "octokit": "^4.0.2",
+    "tslog": "^4.9.3"
   }
 }

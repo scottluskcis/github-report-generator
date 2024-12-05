@@ -10,15 +10,17 @@ const octokit = getOctokit();
 // --------------------------------------------------
 
 type ListCopilotSeatsParams = RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["parameters"];
-type ListCopilotSeatResponseData = RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["response"]["data"];
 export type CopilotSeatDetails = components["schemas"]["copilot-seat-details"];
 
-export async function listCopilotSeats(params: ListCopilotSeatsParams): Promise<CopilotSeatDetails[]> { 
+export async function* listCopilotSeats(params: ListCopilotSeatsParams): AsyncGenerator<CopilotSeatDetails, void, unknown> { 
   const parameters = applyHeaders(params);  
-  const response = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, parameters);
-
-  const seats: CopilotSeatDetails[] = response.flatMap((page: ListCopilotSeatResponseData) => page.seats);
-  return seats;
+  const iterator = await octokit.paginate.iterator(octokit.rest.copilot.listCopilotSeats, parameters);
+ 
+  for await (const { data } of iterator) {
+    for (const seat of data.seats) {
+      yield seat as CopilotSeatDetails;
+    }
+  } 
 }
 
 // --------------------------------------------------
