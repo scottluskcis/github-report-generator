@@ -20,7 +20,7 @@ const type = AppConfig.LOG_TYPE as "json" | "pretty" | "hidden";
 const hideLogPositionForProduction: boolean = AppConfig.HIDE_LOG_POSITION;
 
 export const logger = new Logger({
-  name: "app-logger",
+  //name: "app-logger",
   minLevel: min_level,
   type: type,
   hideLogPositionForProduction: hideLogPositionForProduction,
