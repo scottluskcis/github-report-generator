@@ -57,8 +57,8 @@ async function generateEnterpriseData(): Promise<string | undefined> {
 
 // function to orchestrate the process
 async function run() {
-  console.log("----------------------------------------------");
-  logger.debug(`Process started at: ${new Date().toISOString()}`); 
+  console.log("--------------------------------------------------------------------------------------------");
+  logger.trace(`Process started at: ${new Date().toISOString()}`); 
 
   // data 
   logger.debug("Generating org data...");
@@ -69,8 +69,8 @@ async function run() {
   const summary_report_path = run_copilot_associations_report();
   logger.info(`Summary report saved to: ${summary_report_path}`);
 
-  logger.debug(`Process ended at: ${new Date().toISOString()}`);
-  console.log("----------------------------------------------");
+  logger.trace(`Process ended at: ${new Date().toISOString()}`);
+  console.log("--------------------------------------------------------------------------------------------");
 }
 
 // run the process
