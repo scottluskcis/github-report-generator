@@ -5,6 +5,8 @@ import { getFilePath, writeToFileSync } from "./shared/file-utils";
 import { ActivityData } from "./shared/shared-types"; 
 import { run_copilot_associations_report } from "./report/copilot-associations-report"; 
 import logger from "./shared/app-logger";
+import { App } from "octokit";
+import { generate_copilot_associations_data, getActiveAreasByUser, getUsersInAuditLog } from "./data/copilot-associations-data";
 
 // function for setting up the data to be used in report
 async function generateOrgData(): Promise<string | undefined> {  
@@ -74,8 +76,26 @@ async function run() {
 }
 
 // run the process
-run();
- 
+//run();
+
+// logger.trace("Generating copilot associations data...");
+// generate_copilot_associations_data({ org: AppConfig.ORGANIZATION, per_page: 100 }); 
+
+// logger.trace("Generating audit log data...");
+// getUsersInAuditLog({ org: AppConfig.ORGANIZATION, per_page: 100 });
+
+
+logger.trace("Generating audit log data...");
+getActiveAreasByUser({ 
+  org: AppConfig.ORGANIZATION, 
+  actor: 'scottluskcis', 
+  time_period: "month",
+  include: "all",
+  per_page: 100 
+}).then(data => { 
+  logger.debug(data); 
+});
+
 /*
 
 NOTES:
