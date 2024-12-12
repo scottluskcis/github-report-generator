@@ -7,7 +7,7 @@ import logger from "../shared/app-logger";
 import { CopilotSeatAssignee, Repository, TeamInfo, TimePeriodType } from "../shared/shared-types";
 import { timestampToDate } from "../shared/time-util";
 
-export async function generate_copilot_associations_data({
+export async function generateCopilotAssociationsData({
   org,
   per_page,
   time_period,

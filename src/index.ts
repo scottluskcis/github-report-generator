@@ -6,7 +6,7 @@ import { ActivityData } from "./shared/shared-types";
 import { run_copilot_associations_report } from "./report/copilot-associations-report"; 
 import logger from "./shared/app-logger";
 import { App } from "octokit";
-import { generate_copilot_associations_data } from "./data/copilot-associations-data";
+import { generateCopilotAssociationsData } from "./data/copilot-associations-data";
 
 // function for setting up the data to be used in report
 async function generateOrgData(): Promise<string | undefined> {  
@@ -79,9 +79,10 @@ async function run() {
 //run();
 
 logger.trace("Generating copilot associations data...");
-generate_copilot_associations_data({ org: AppConfig.ORGANIZATION, per_page: 100, time_period: AppConfig.TIME_PERIOD })
+generateCopilotAssociationsData({ org: AppConfig.ORGANIZATION, per_page: 100, time_period: AppConfig.TIME_PERIOD })
   .then(data => {
     logger.debug(data);
+    writeToFileSync(data, "copilot-associations.json");
   }); 
 
 // logger.trace("Generating audit log data...");
