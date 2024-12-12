@@ -100,3 +100,29 @@ export async function* listRepoTeams(
     }
   }
 }
+
+
+// --------------------------------------------------
+// listRepoContributors
+// reference: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-contributors
+// --------------------------------------------------
+
+type listRepoContributorsParameters = RestEndpointMethodTypes["repos"]["listContributors"]["parameters"];
+type Contributor = components["schemas"]["contributor"];
+
+export async function* listRepoContributors(
+  params: listRepoContributorsParameters
+): AsyncGenerator<Contributor, void, unknown> {
+  const parameters = applyHeaders(params);
+  
+  const iterator = await octokit.paginate.iterator(
+    octokit.rest.repos.listContributors,
+    parameters
+  );
+
+  for await (const { data: contributors } of iterator) {
+    for (const contributor of contributors) {
+      yield contributor;
+    }
+  }
+}

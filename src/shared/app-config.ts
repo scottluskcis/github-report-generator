@@ -3,24 +3,18 @@ import { TimePeriodType } from "./shared-types";
 dotenv.config({ path: ".env.local" });
 
 export class AppConfig {
-  public static readonly GITHUB_TOKEN: string =
-    AppConfig.getEnvVar("GITHUB_TOKEN");
-  public static readonly GITHUB_TOKEN_CLASSIC: string = AppConfig.getEnvVar(
-    "GITHUB_TOKEN_CLASSIC"
-  );
+  public static readonly GITHUB_TOKEN: string = AppConfig.getEnvVar("GITHUB_TOKEN");
+  public static readonly GITHUB_TOKEN_CLASSIC: string = AppConfig.getEnvVar("GITHUB_TOKEN_CLASSIC");
   public static readonly ENTERPRISE: string = AppConfig.getEnvVar("ENTERPRISE");
-  public static readonly API_VERSION: string =
-    AppConfig.getEnvVar("GITHUB_API_VERSION", "2022-11-28");
-  public static readonly ORGANIZATION: string =
-    AppConfig.getEnvVar("ORGANIZATION");
+  public static readonly API_VERSION: string = AppConfig.getEnvVar("GITHUB_API_VERSION", "2022-11-28");
+  public static readonly ORGANIZATION: string = AppConfig.getEnvVar("ORGANIZATION");
   public static readonly TIME_PERIOD: TimePeriodType = AppConfig.getEnvVar("TIME_PERIOD", "month") as TimePeriodType;
-  public static readonly GENERATE_DATA: boolean =
-    AppConfig.getEnvVar("GENERATE_DATA", "true").toLowerCase() === "true";
-  public static readonly GITHUB_TOKENS_BY_ORG: { [key: string]: string } =
-    AppConfig.getTokensByOrg(AppConfig.getEnvVar("GITHUB_TOKENS_BY_ORG"));
+  public static readonly GENERATE_DATA: boolean = AppConfig.getEnvVar("GENERATE_DATA", "true").toLowerCase() === "true";
+  public static readonly GITHUB_TOKENS_BY_ORG: { [key: string]: string } = AppConfig.getTokensByOrg(AppConfig.getEnvVar("GITHUB_TOKENS_BY_ORG"));
+  public static readonly PER_PAGE: number = parseInt(AppConfig.getEnvVar("PER_PAGE", "100"));
 
   // logging settings
-  public static readonly MIN_LOG_LEVEL: number = parseInt(AppConfig.getEnvVar("MIN_LOG_LEVEL", "1"));
+  public static readonly MIN_LOG_LEVEL: number = parseInt(AppConfig.getEnvVar("MIN_LOG_LEVEL", "3"));
   public static readonly LOG_TYPE: string = AppConfig.getEnvVar("LOG_TYPE", "pretty");  
   public static readonly OUTPUT_LOG_TO_FILE: boolean = AppConfig.getEnvVar("OUTPUT_LOG_TO_FILE", "false").toLowerCase() === "true";
   public static readonly HIDE_LOG_POSITION: boolean = AppConfig.getEnvVar("HIDE_LOG_POSITION", "true").toLowerCase() === "true";

@@ -124,6 +124,7 @@ async function getTeamsActivity({
       team_description: team.description ?? "",
       repos: team_repos,
       members: team_members,
+      copilot_users: [],
     });
   }
 
@@ -173,7 +174,9 @@ async function getOrgReposWithoutTeam({
   const team_summary: TeamSummary = {
     team_name: "repos-no-team",
     team_description: "Repos not assigned to a team",
-    repos: repos,
+    repos: repos, 
+    members: [],
+    copilot_users: [],
   };
 
   return team_summary;

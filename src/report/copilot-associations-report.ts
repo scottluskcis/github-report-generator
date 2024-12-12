@@ -1,164 +1,165 @@
-import { ActivityData, EnterpriseCopilotSeats, TeamSummary, RepoSummary, CopilotAssociation } from "../shared/shared-types";
+import { RequestError } from "octokit";
+import { generateCopilotAssociationsData } from "../data/copilot-associations-data";
+import { AppConfig } from "../shared/app-config";
+import logger from "../shared/app-logger";
 import { readJsonFile, writeToCsv, writeToFileSync } from "../shared/file-utils";
+import { CopilotAssociation } from "../shared/shared-types";
 
-export function run_copilot_associations_report(): string | undefined {
-  const org_data = readJsonFile<{[key: string]: ActivityData}>("activity_data.json");
+export interface CopilotAssociationsData {
+  copilot_seats: { assignee: string; last_activity_at: string }[];
+  teams: {
+    [team_name: string]: {
+      team_name: string;
+      members: string[];
+      copilot_users: string[];
+    };
+  };
+  repositories: {
+    [repo_name: string]: {
+      repo_owner: string;
+      repo_name: string;
+      collaborators: string[];
+      collaborator_affiliation: string;
+      contributors: string[];
+      associated_copilot_users: string[];
+    };
+  };
+}
 
-  if (!org_data) {
+export async function runCopilotAssociationsReport(): Promise<string | undefined> { 
+  const input_file_name = 'copilot-associations.json';
+  const output_file_name = 'copilot_associations.csv';
+
+  try {
+    if (AppConfig.GENERATE_DATA) {
+      logger.debug("Generating copilot associations data...");
+      await generateData(input_file_name);
+    }
+ 
+    logger.debug("Running copilot associations report...");
+    const output_file = runReport(input_file_name, output_file_name); 
+    logger.info(`Generated copilot associations report ${output_file}`);
+
+    return output_file; 
+  } catch(error) {
+    // octokit RequestError, log details for debugging
+    if(error instanceof RequestError) { 
+      logger.error('RequestError - message:', error.message);
+      logger.debug('RequestError - status:', error.status);
+      logger.debug('RequestError - request:', error.request);
+      logger.debug('RequestError - response:', error.response);
+    } 
+    // log 
+    logger.fatal(error);
+
+    return undefined;
+  }
+}
+
+async function generateData(file_name: string): Promise<string> { 
+  logger.debug("Generating copilot associations data...");
+  const data: CopilotAssociationsData = await generateCopilotAssociationsData({ 
+    org: AppConfig.ORGANIZATION, 
+    per_page: AppConfig.PER_PAGE, 
+    time_period: AppConfig.TIME_PERIOD 
+  });
+  logger.info("Generated copilot associations data");
+ 
+  logger.debug("Writing copilot associations data to file...");
+  const file = writeToFileSync(data, file_name);
+  logger.info(`Wrote copilot associations data to file ${file}`);
+
+  return file;
+}
+
+function runReport(input_file_name: string, output_file_name: string): string | undefined {
+  const data = readJsonFile<CopilotAssociationsData>(input_file_name);
+
+  if (!data) {
     console.error("Data not found, exiting...");
     return undefined;
   }
 
-  const json_data = get_all_org_copilot_associations({ orgs: org_data });
-  const csv_file = writeToCsv(json_data, "copilot_associations.csv");
-  
+  const associations = getCopilotAssociations(data);
+  const csv_file = writeToCsv(associations, output_file_name);
+
   return csv_file;
 }
 
-function get_all_org_copilot_associations({
-  orgs,
-}: {
-  orgs: { [key: string]: ActivityData };
-}) {
-  const results: CopilotAssociation[] = [];
-  for(const org_name in orgs) {
-    const org_data = orgs[org_name];
-    const associations = get_copilot_associations({ org_data });
-    results.push(...associations);
-  }
-  return results;
-}
-
-function get_copilot_associations({
-  org_data,
-}: { 
-  org_data: ActivityData; 
-}): CopilotAssociation[] { 
-  const team_associations = get_team_associations({ org_data });
-  const repository_associations = get_repository_associations({ org_data }); 
+function getCopilotAssociations(data: CopilotAssociationsData): CopilotAssociation[] {
+  const team_associations = getTeamAssociations(data);
+  const repository_associations = getRepositoryAssociations(data);
   return team_associations.concat(repository_associations);
 }
 
-function get_team_associations({
-  org_data,
-}: { 
-  org_data: ActivityData; 
-}): CopilotAssociation[] {
-  const copilot_seats = org_data.copilot_seats; 
-
-  const create_association = (user_name: string, association: string, has_copilot_seat: boolean, related_copilot_user_name: string): CopilotAssociation => {
-    return {
-      org_name: org_data.org, 
-      user_name,
-      user_has_org_copilot_seat: has_copilot_seat,
-      association: association,
-      association_type: 'team',
-      related_copilot_user_name
-    };
-  }
-
+function getTeamAssociations(data: CopilotAssociationsData): CopilotAssociation[] {
   const results: CopilotAssociation[] = [];
-  for(const team of org_data.teams) { 
-    const team_members = team.members; 
-    if(!team_members) {
-      continue;
-    }
- 
-    // members on the team that do have a copilot seat
-    const team_members_with_copilot = team_members.filter((member_name) => { 
-      const seat = copilot_seats.find((seat) => seat.assignee == member_name);
-      return seat != null;
-    });
- 
-    // members on the team that do not have a copilot seat
-    const team_members_without_copilot = team_members.filter((member_name) => {
-      const seat = copilot_seats.find((seat) => seat.assignee == member_name);
-      return seat == null;
-    });
 
-    const members_paired_with_related: string[] = [];
-    for(const member_name of team_members_without_copilot) { 
-      // pair any copilot users with this team member
-      for(const member_with_copilot of team_members_with_copilot) {
-        results.push(create_association(member_name, team.team_name, false, member_with_copilot)); 
-        members_paired_with_related.push(member_name);
-      }
-      // include in report this team member but indicate no relation to a copilot user directly in team
-      if(!members_paired_with_related.includes(member_name)) { 
-        results.push(create_association(member_name, team.team_name, false, "Unknown"));
-      }
-    }
+  for (const team_name in data.teams) {
+    const team = data.teams[team_name];
+    const copilot_users = team.copilot_users;
 
-    // track users that do have copilot seats
-    for(const member_name of team_members_with_copilot) {  
-      results.push(create_association(member_name, team.team_name, true, "Self")); 
+    for (const member of team.members) {
+      if (!copilot_users.includes(member)) {
+        for (const copilot_user of copilot_users) {
+          results.push(createAssociation(member, team.team_name, false, copilot_user, "team"));
+        }
+        if (copilot_users.length === 0) {
+          results.push(createAssociation(member, team.team_name, false, "Unknown", "team"));
+        }
+      } else {
+        results.push(createAssociation(member, team.team_name, true, "Self", "team"));
+      }
     }
   }
+
   return results;
 }
 
-function get_repository_associations({
-  org_data,
-}: { 
-  org_data: ActivityData; 
-}) {
-  const copilot_seats = org_data.copilot_seats;
-
-  const create_association = (user_name: string, association: string, has_copilot_seat: boolean, related_copilot_user_name: string): CopilotAssociation => {
-    return {
-      org_name: org_data.org, 
-      user_name,
-      user_has_org_copilot_seat: has_copilot_seat,
-      association: association,
-      association_type: 'repository',
-      related_copilot_user_name
-    };
-  }
-
+function getRepositoryAssociations(data: CopilotAssociationsData): CopilotAssociation[] {
   const results: CopilotAssociation[] = [];
-  for(const team of org_data.teams) {
-    const team_members = team.members ?? [];
 
-    // members on the team that do have a copilot seat
-    const team_members_with_copilot = team_members.filter((member_name) => { 
-      const seat = copilot_seats.find((seat) => seat.assignee == member_name);
-      return seat != null;
-    });
- 
-    for(const repo of team.repos) {
-      const repo_active_users = repo.active_users;
-      if(!repo_active_users) {
-        continue;
-      }
+  for (const repo_name in data.repositories) {
+    const repo = data.repositories[repo_name];
+    const copilot_users = repo.associated_copilot_users;
 
-      // members on the repo that do have a copilot seat
-      const repo_members_with_copilot = repo_active_users.filter((u) => { 
-        const seat = copilot_seats.find((seat) => seat.assignee == u.user);
-        return seat != null;
-      });
-
-      // members on the repo that do not have a copilot seat
-      const repo_members_without_copilot = repo_active_users.filter((u) => {
-        const seat = copilot_seats.find((seat) => seat.assignee == u.user);
-        return seat == null;
-      });
-
-      for(const active_repo_member of repo_members_without_copilot) { 
-        // check other active contributors in repo
-        for(const member_with_copilot of repo_members_with_copilot) {
-          results.push(create_association(active_repo_member.user, repo.repo_full_name, false, member_with_copilot.user));
+    for (const collaborator of repo.collaborators) {
+      if (!copilot_users.includes(collaborator)) {
+        for (const copilot_user of copilot_users) {
+          results.push(createAssociation(collaborator, repo.repo_name, false, copilot_user, "repository"));
         }
-        // there could be a a copilot member in the team association to connect with
-        for(const team_member_name of team_members_with_copilot) {
-          results.push(create_association(active_repo_member.user, repo.repo_full_name, false, team_member_name));
+        if (copilot_users.length === 0) {
+          results.push(createAssociation(collaborator, repo.repo_name, false, "Unknown", "repository"));
         }
+      } else {
+        results.push(createAssociation(collaborator, repo.repo_name, true, "Self", "repository"));
       }
+    }
 
-      // active users that do have copilot seats 
-      for(const active_repo_member of repo_members_with_copilot) { 
-        results.push(create_association(active_repo_member.user, repo.repo_full_name, true, "Self"));
+    for (const contributor of repo.contributors) {
+      if (!copilot_users.includes(contributor)) {
+        for (const copilot_user of copilot_users) {
+          results.push(createAssociation(contributor, repo.repo_name, false, copilot_user, "repository"));
+        }
+        if (copilot_users.length === 0) {
+          results.push(createAssociation(contributor, repo.repo_name, false, "Unknown", "repository"));
+        }
+      } else {
+        results.push(createAssociation(contributor, repo.repo_name, true, "Self", "repository"));
       }
     }
   }
+
   return results;
+}
+
+function createAssociation(user_name: string, association: string, has_copilot_seat: boolean, related_copilot_user_name: string, association_type: "team" | "repository"): CopilotAssociation {
+  return {
+    org_name: "org_name_placeholder", // Replace with actual org name if available
+    user_name,
+    user_has_org_copilot_seat: has_copilot_seat,
+    association,
+    association_type,
+    related_copilot_user_name
+  };
 }
