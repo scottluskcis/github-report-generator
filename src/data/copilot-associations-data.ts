@@ -4,7 +4,7 @@ import { getAuditLogForActor } from "../restapi/organizations";
 import { listRepoContributors } from "../restapi/repositories";
 import { listTeamMembers, listTeams } from "../restapi/teams";
 import logger from "../shared/app-logger";
-import { TimePeriodType } from "../shared/shared-types";
+import { CopilotSeatAssignee, Repository, TeamInfo, TimePeriodType } from "../shared/shared-types";
 import { timestampToDate } from "../shared/time-util";
 
 export async function generate_copilot_associations_data({
@@ -14,114 +14,116 @@ export async function generate_copilot_associations_data({
 }: {
   org: string;
   per_page: number;
-  time_period: TimePeriodType; 
+  time_period: TimePeriodType;
 }) {
   logger.trace("getOrgCopilotUsers", org);
 
-  const copilot_seats: { assignee: string; last_activity_at: string }[] = [];
-  const teams: { [team: string]: { team_name: string; members: string[]; copilot_users: string[] } } = {};
-  const repositories: { 
-    [repo: string]: { 
-      repo_owner: string; 
-      repo_name: string; 
-      collaborators: string[]; 
-      collaborator_affiliation: string; 
-      contributors: string[]; 
-      associated_copilot_users: string[] } 
-  } = {};
-  const collaborator_affiliation = 'direct';
+  const copilot_seats = await fetchCopilotSeats(org, per_page);
+  const teams: { [team: string]: TeamInfo } = {};
+  const repositories: { [repo: string]: Repository } = {};
 
-  const copilot_seats_iterator = getOrgCopilotUsers({ org, per_page });
-  for await (const seat of copilot_seats_iterator) { 
-    const seat_assignee = seat.assignee;
-    logger.debug(`Found seat_assignee`, seat_assignee);
-
-    if(!copilot_seats.some(s => s.assignee === seat_assignee)) {
-      copilot_seats.push(seat);
-    }
-
-    logger.trace("getUserActiveAreas", org, seat_assignee, time_period);
-    const active_areas_iterator = getUserActiveAreas({ 
-        org,  
-        actor: seat_assignee,
-        include: "all",
-        time_period: time_period,
-        per_page: per_page,
-    });
-
-    // process active areas
-    for await (const active_area of active_areas_iterator) { 
-      // process teams 
-      if(active_area.team) {
-        if(teams[active_area.team]) { 
-          if(!teams[active_area.team].copilot_users.includes(seat_assignee)) {
-            logger.debug(`Found team ${active_area.team} for user ${seat_assignee}`);
-            teams[active_area.team].copilot_users.push(seat_assignee);
-          }
-        } else {
-          teams[active_area.team] = { team_name: active_area.team, members: [], copilot_users: [seat_assignee] }; 
-          for await (const team of getOrgTeamsMembers({ org, per_page })) { 
-            const member_name = team.member_name;
-            teams[active_area.team].members.push(member_name);
-          }
-        }
-      }
-
-      // process repos 
-      const repository_owner_name = active_area.repository;
-      if(repository_owner_name) {
-        if(repositories[repository_owner_name]) {
-          if(!repositories[repository_owner_name].associated_copilot_users.includes(seat_assignee)) {
-            logger.trace(`Found repo ${repository_owner_name} for user ${seat_assignee}`);
-            repositories[repository_owner_name].associated_copilot_users.push(seat_assignee);
-          }
-        } else {
-            const [owner, repo_name] = repository_owner_name.split("/");
-            repositories[repository_owner_name] = { repo_owner: owner, repo_name: repo_name, collaborators: [], collaborator_affiliation: collaborator_affiliation, contributors: [], associated_copilot_users: [seat_assignee] };
-            logger.trace(`Found repo ${owner}/${repo_name} for user ${seat_assignee}`);
-            
-            // collaborators
-            for await (const collaborator of listRepoCollaborators({ owner, repo: repo_name, per_page, affiliation: collaborator_affiliation })) { 
-              const collaborator_name = collaborator.login;
-              logger.trace(`Found collaborator ${collaborator_name} for repo ${repo_name}`);
-              repositories[repository_owner_name].collaborators.push(collaborator_name);
-            }
-
-            // contributors
-            for await (const contributor of listRepoContributors({ owner, repo: repo_name, per_page })) {
-              const contributor_name = contributor.login || contributor.name;
-              if(contributor_name) {
-                logger.trace(`Found contributor ${contributor_name} for repo ${repo_name}`);
-                repositories[repository_owner_name].contributors.push(contributor_name);
-              }
-            }
-        } 
-      }
-    }
-
+  for (const seat of copilot_seats) {
+    await processActiveAreas(org, seat.assignee, time_period, per_page, teams, repositories);
   }
 
-  // handle any other teams the copilot seat may be associated with because repo activity doesn't show as team activity
-  logger.trace("getOrgTeamsMembers", org);
+  await fetchOrgTeamsMembers(org, per_page, teams, copilot_seats);
+
+  return { copilot_seats, teams, repositories };
+}
+
+async function fetchCopilotSeats(org: string, per_page: number): Promise<CopilotSeatAssignee[]> {
+  const copilot_seats: CopilotSeatAssignee[] = [];
+  const copilot_seats_iterator = getOrgCopilotUsers({ org, per_page });
+  for await (const seat of copilot_seats_iterator) {
+    const seat_assignee = seat.assignee;
+    logger.debug(`Found seat_assignee`, seat_assignee);
+    if (!copilot_seats.some(s => s.assignee === seat_assignee)) {
+      copilot_seats.push(seat);
+    }
+  }
+  return copilot_seats;
+}
+
+async function processActiveAreas(org: string, seat_assignee: string, time_period: TimePeriodType, per_page: number, teams: { [team: string]: TeamInfo }, repositories: { [repo: string]: Repository }) {
+  const active_areas_iterator = getUserActiveAreas({
+    org,
+    actor: seat_assignee,
+    include: "all",
+    time_period: time_period,
+    per_page: per_page,
+  });
+
+  for await (const active_area of active_areas_iterator) {
+    if (active_area.team) {
+      await processTeams(org, active_area.team, seat_assignee, per_page, teams);
+    }
+    if (active_area.repository) {
+      await processRepositories(active_area.repository, seat_assignee, per_page, repositories);
+    }
+  }
+}
+
+async function processTeams(org: string, team_name: string, seat_assignee: string, per_page: number, teams: { [team: string]: TeamInfo }) {
+  if (teams[team_name]) {
+    if (!teams[team_name].copilot_users.includes(seat_assignee)) {
+      logger.debug(`Found team ${team_name} for user ${seat_assignee}`);
+      teams[team_name].copilot_users.push(seat_assignee);
+    }
+  } else {
+    teams[team_name] = { team_name: team_name, members: [], copilot_users: [seat_assignee] };
+    for await (const team of getOrgTeamsMembers({ org, per_page })) {
+      const member_name = team.member_name;
+      teams[team_name].members.push(member_name);
+    }
+  }
+}
+
+async function processRepositories(repository_owner_name: string, seat_assignee: string, per_page: number, repositories: { [repo: string]: Repository }) {
+  const collaborator_affiliation = 'direct';
+  if (repositories[repository_owner_name]) {
+    if (!repositories[repository_owner_name].associated_copilot_users.includes(seat_assignee)) {
+      logger.trace(`Found repo ${repository_owner_name} for user ${seat_assignee}`);
+      repositories[repository_owner_name].associated_copilot_users.push(seat_assignee);
+    }
+  } else {
+    const [owner, repo_name] = repository_owner_name.split("/");
+    repositories[repository_owner_name] = { repo_owner: owner, repo_name: repo_name, collaborators: [], collaborator_affiliation: collaborator_affiliation, contributors: [], associated_copilot_users: [seat_assignee] };
+    logger.trace(`Found repo ${owner}/${repo_name} for user ${seat_assignee}`);
+
+    for await (const collaborator of listRepoCollaborators({ owner, repo: repo_name, per_page, affiliation: collaborator_affiliation })) {
+      const collaborator_name = collaborator.login;
+      logger.trace(`Found collaborator ${collaborator_name} for repo ${repo_name}`);
+      repositories[repository_owner_name].collaborators.push(collaborator_name);
+    }
+
+    for await (const contributor of listRepoContributors({ owner, repo: repo_name, per_page })) {
+      const contributor_name = contributor.login || contributor.name;
+      if (contributor_name) {
+        logger.trace(`Found contributor ${contributor_name} for repo ${repo_name}`);
+        repositories[repository_owner_name].contributors.push(contributor_name);
+      }
+    }
+  }
+}
+
+async function fetchOrgTeamsMembers(org: string, per_page: number, teams: { [team: string]: TeamInfo }, copilot_seats: CopilotSeatAssignee[]) {
   const org_team_members_iterator = getOrgTeamsMembers({ org, per_page });
-  for await(const team of org_team_members_iterator) {
+  for await (const team of org_team_members_iterator) {
     const team_name = team.team_name;
     logger.trace("Found team", team_name);
- 
-    if(!teams[team_name]) { 
-      teams[team_name] = { team_name: team_name, members: [], copilot_users: [] };  
+
+    if (!teams[team_name]) {
+      teams[team_name] = { team_name: team_name, members: [], copilot_users: [] };
     }
 
     const member_name = team.member_name;
     logger.warn(`Found team member ${member_name} for team ${team_name}`);
     teams[team_name].members.push(member_name);
 
-    if(copilot_seats.some(s => s.assignee == member_name) && !(teams[team_name].copilot_users.includes(member_name))) {
+    if (copilot_seats.some(s => s.assignee == member_name) && !(teams[team_name].copilot_users.includes(member_name))) {
       teams[team_name].copilot_users.push(member_name);
-    } 
+    }
   }
-
-  return { copilot_seats, teams, repositories };
 }
 
 // 1. Get all copilot users

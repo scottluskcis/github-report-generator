@@ -25,6 +25,15 @@ export interface UserSummary {
   has_copilot_seat_in_org?: boolean; 
 }
 
+export type Repository = {
+  repo_owner: string;
+  repo_name: string;
+  collaborators: string[];
+  collaborator_affiliation: string;
+  contributors: string[];
+  associated_copilot_users: string[];
+};
+
 export interface RepoSummary {
   repo_name: string;
   repo_full_name: string;
@@ -32,11 +41,15 @@ export interface RepoSummary {
   members_without_copilot?: string[];
 }
 
-export interface TeamSummary {
+export interface TeamInfo {
   team_slug?: string;
   team_name: string;
-  team_description?: string;
-  members?: string[];
+  copilot_users: string[]; 
+  members: string[]; 
+}
+
+export interface TeamSummary extends TeamInfo {
+  team_description?: string; 
   members_without_copilot?: string[];
   repos: RepoSummary[];
 }
