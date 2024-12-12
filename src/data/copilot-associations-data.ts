@@ -78,8 +78,6 @@ async function processActiveAreas(org: string, seat_assignee: string, time_perio
 }
 
 async function processTeams(org: string, team_name: string, seat_assignee: string | undefined, per_page: number, teams: { [team: string]: TeamInfo }) {
-  logger.warn(team_name); 
-
   let has_loaded_members = false;
   if(!teams[team_name]) {
     teams[team_name] = { team_name: team_name, members: [], copilot_users: [] }; 
@@ -97,7 +95,7 @@ async function processTeams(org: string, team_name: string, seat_assignee: strin
     for await (const member of listTeamMembers({ org, team_slug, per_page })) { 
       const member_name = member.login;
       teams[team_name].members.push(member_name);
-      logger.warn(`Adding team member ${member_name} for team ${team_name}`);
+      logger.debug(`Found team member ${member_name} for team ${team_name}`);
     }
   }
 }
