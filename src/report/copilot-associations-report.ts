@@ -1,5 +1,5 @@
-import { ActivityData, EnterpriseCopilotSeats, TeamSummary, RepoSummary, CopilotAssociation } from "../shared/shared-types";
-import { readJsonFile, writeToCsv, writeToFileSync } from "../shared/file-utils";
+import { ActivityData, CopilotAssociation } from "../shared/shared-types";
+import { readJsonFile, writeToCsv } from "../shared/file-utils";
 
 export function run_copilot_associations_report(): string | undefined {
   const org_data = readJsonFile<{[key: string]: ActivityData}>("activity_data.json");
