@@ -109,7 +109,7 @@ TIME_PERIOD=month
 LOG_TYPE=pretty
 
 # 0: silly, 1: trace, 2: debug, 3: info, 4: warn, 5: error, 6: fatal
-MIN_LOG_LEVEL=1
+MIN_LOG_LEVEL=3
 
 # whether or not to output the log to a file called logs_yyyy-MM-dd.txt
 OUTPUT_LOG_TO_FILE=false
@@ -117,3 +117,7 @@ OUTPUT_LOG_TO_FILE=false
 # true to hide the log position in the console output and file output
 HIDE_LOG_POSITION=true
 ```
+
+### Logging
+
+Logging has been added to this, use the `MIN_LOG_LEVEL` environment variable to indicate the level of logging you want to see and the `OUTPUT_LOG_TO_FILE` if you want to store the output in a local file.
