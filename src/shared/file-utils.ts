@@ -58,8 +58,6 @@ export function readJsonFile<T>(file_name: string): T | null {
 }
 
 export function appendToFile(file_name: string, data: any) {
-  logger.trace("appendToFile started", file_name);
-
   const { file_path, folder_path } = getFilePath(file_name);
   
   // create output folder if it doesn't exist
@@ -70,8 +68,6 @@ export function appendToFile(file_name: string, data: any) {
 
   const json_data = JSON.stringify(data);
   fs.appendFileSync(file_path, `${json_data}\n`);
-
-  logger.trace("appendToFile finished", file_name);
 
   return file_path;
 }

@@ -2,7 +2,7 @@ import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import { components } from "@octokit/openapi-types/types";
 import { applyHeaders, getOctokit } from "../shared/octokit-client"; 
 import { TimePeriodType } from "../shared/shared-types";
-import { getDateForTimePeriod } from "../shared/time-util";
+import { getDateForTimePeriod } from "../shared/time-util"; 
 
 const octokit = getOctokit();
 
@@ -47,7 +47,7 @@ export async function* getOrgAuditLog(
   const iterator = await octokit.paginate.iterator(endpoint, parameters);
 
   for await (const { data: auditLog } of iterator) {
-    for (const entry of auditLog) {
+    for (const entry of auditLog) { 
       yield entry;
     }
   }
