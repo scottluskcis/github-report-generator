@@ -61,7 +61,7 @@ async function processActiveAreas(org: string, seat_assignee: string, time_perio
   const active_areas_iterator = getUserActiveAreas({
     org,
     actor: seat_assignee,
-    include: "all",
+    include: "git",
     time_period: time_period,
     per_page: per_page,
   });
