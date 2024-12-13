@@ -61,16 +61,12 @@ async function processActiveAreas(org: string, seat_assignee: string, time_perio
   const active_areas_iterator = getUserActiveAreas({
     org,
     actor: seat_assignee,
-    include: "git",
+    include: "git", // for now only include git activity
     time_period: time_period,
     per_page: per_page,
   });
 
-  for await (const active_area of active_areas_iterator) {
-    if (active_area.team) {
-      const [org_name, team_name] = active_area.team.split("/");
-      await processTeams(org, team_name, seat_assignee, per_page, teams);
-    }
+  for await (const active_area of active_areas_iterator) { 
     if (active_area.repository) {
       await processRepositories(active_area.repository, seat_assignee, per_page, repositories);
     }
@@ -112,16 +108,17 @@ async function processRepositories(repository_owner_name: string, seat_assignee:
     repositories[repository_owner_name] = { repo_owner: owner, repo_name: repo_name, collaborators: [], collaborator_affiliation: collaborator_affiliation, contributors: [], associated_copilot_users: [seat_assignee] };
     logger.trace(`Found repo ${owner}/${repo_name} for user ${seat_assignee}`);
 
-    // collaborators
-    let collaborator_count: number = 0;
-    for await (const collaborator of listRepoCollaborators({ owner, repo: repo_name, per_page, affiliation: collaborator_affiliation })) {
-      const collaborator_name = collaborator.login;
-      logger.trace(`Found collaborator ${collaborator_name} for repo ${repo_name}`);
-      repositories[repository_owner_name].collaborators.push(collaborator_name);
+    // #18 remove collaborators check for now
+    // // collaborators
+    // let collaborator_count: number = 0;
+    // for await (const collaborator of listRepoCollaborators({ owner, repo: repo_name, per_page, affiliation: collaborator_affiliation })) {
+    //   const collaborator_name = collaborator.login;
+    //   logger.trace(`Found collaborator ${collaborator_name} for repo ${repo_name}`);
+    //   repositories[repository_owner_name].collaborators.push(collaborator_name);
         
-      collaborator_count++;
-    } 
-    logger.info(`Found ${collaborator_count} collaborators for repo ${repo_name}`);
+    //   collaborator_count++;
+    // } 
+    // logger.info(`Found ${collaborator_count} collaborators for repo ${repo_name}`);
 
     // contributors 
     let contributor_count: number = 0;
