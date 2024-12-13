@@ -1,4 +1,3 @@
-import { listRepoCollaborators } from "../restapi/collaborators";
 import { listCopilotSeats } from "../restapi/copilot";
 import { getAuditLogForActor } from "../restapi/organizations";
 import { listRepoContributors } from "../restapi/repositories";
@@ -97,7 +96,6 @@ async function processTeams(org: string, team_name: string, seat_assignee: strin
 }
 
 async function processRepositories(repository_owner_name: string, seat_assignee: string, per_page: number, repositories: { [repo: string]: Repository }) {
-  const collaborator_affiliation = 'direct'; 
   if (repositories[repository_owner_name]) {
     if (!repositories[repository_owner_name].associated_copilot_users.includes(seat_assignee)) {
       logger.trace(`Found repo ${repository_owner_name} for user ${seat_assignee}`);
@@ -105,20 +103,8 @@ async function processRepositories(repository_owner_name: string, seat_assignee:
     }
   } else {
     const [owner, repo_name] = repository_owner_name.split("/");
-    repositories[repository_owner_name] = { repo_owner: owner, repo_name: repo_name, collaborators: [], collaborator_affiliation: collaborator_affiliation, contributors: [], associated_copilot_users: [seat_assignee] };
+    repositories[repository_owner_name] = { repo_owner: owner, repo_name: repo_name, contributors: [], associated_copilot_users: [seat_assignee] };
     logger.trace(`Found repo ${owner}/${repo_name} for user ${seat_assignee}`);
-
-    // #18 remove collaborators check for now
-    // // collaborators
-    // let collaborator_count: number = 0;
-    // for await (const collaborator of listRepoCollaborators({ owner, repo: repo_name, per_page, affiliation: collaborator_affiliation })) {
-    //   const collaborator_name = collaborator.login;
-    //   logger.trace(`Found collaborator ${collaborator_name} for repo ${repo_name}`);
-    //   repositories[repository_owner_name].collaborators.push(collaborator_name);
-        
-    //   collaborator_count++;
-    // } 
-    // logger.info(`Found ${collaborator_count} collaborators for repo ${repo_name}`);
 
     // contributors 
     let contributor_count: number = 0;
