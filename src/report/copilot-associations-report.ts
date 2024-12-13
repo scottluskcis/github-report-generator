@@ -17,9 +17,7 @@ export interface CopilotAssociationsData {
   repositories: {
     [repo_name: string]: {
       repo_owner: string;
-      repo_name: string;
-      collaborators: string[];
-      collaborator_affiliation: string;
+      repo_name: string; 
       contributors: string[];
       associated_copilot_users: string[];
     };
@@ -122,19 +120,6 @@ function getRepositoryAssociations(data: CopilotAssociationsData): CopilotAssoci
   for (const repo_name in data.repositories) {
     const repo = data.repositories[repo_name];
     const copilot_users = repo.associated_copilot_users;
-
-    for (const collaborator of repo.collaborators) {
-      if (!copilot_users.includes(collaborator)) {
-        for (const copilot_user of copilot_users) {
-          results.push(createAssociation(collaborator, repo.repo_name, false, copilot_user, "repository"));
-        }
-        if (copilot_users.length === 0) {
-          results.push(createAssociation(collaborator, repo.repo_name, false, "Unknown", "repository"));
-        }
-      } else {
-        results.push(createAssociation(collaborator, repo.repo_name, true, "Self", "repository"));
-      }
-    }
 
     for (const contributor of repo.contributors) {
       if (!copilot_users.includes(contributor)) {

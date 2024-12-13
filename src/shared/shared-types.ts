@@ -27,9 +27,7 @@ export interface UserSummary {
 
 export type Repository = {
   repo_owner: string;
-  repo_name: string;
-  collaborators: string[];
-  collaborator_affiliation: string;
+  repo_name: string; 
   contributors: string[];
   associated_copilot_users: string[];
 };
