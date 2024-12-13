@@ -31,7 +31,7 @@ export async function generateCopilotAssociationsData({
   const copilot_seats = await fetchCopilotSeats(org, per_page);
 
   // because the audit may not reflect that a copilot user is in a team, we need to get all teams and their members
-  await fetchOrgTeamsMembers(org, per_page, teams);
+  await fetchOrgTeamsMembers(org, per_page, teams, copilot_seats);
 
   // for every copilot user, get their active areas (repos and teams) by looking at the audit log
   // NOTE: there is rate limiting with audit log and its not intended to be used in this way constantly
@@ -72,17 +72,12 @@ async function processActiveAreas(org: string, seat_assignee: string, time_perio
   }
 }
 
-async function processTeams(org: string, team_name: string, seat_assignee: string | undefined, per_page: number, teams: { [team: string]: TeamInfo }) {
+async function processTeams(org: string, team_name: string, per_page: number, teams: { [team: string]: TeamInfo }, org_copilot_seats: CopilotSeatAssignee[]) {
   let has_loaded_members = false;
   if(!teams[team_name]) {
     teams[team_name] = { team_name: team_name, members: [], copilot_users: [] }; 
   } else {
     has_loaded_members = teams[team_name].members.length > 0;
-  }
-
-  if (seat_assignee && !teams[team_name].copilot_users.includes(seat_assignee)) {
-    logger.debug(`Found team ${team_name} for user ${seat_assignee}`);
-    teams[team_name].copilot_users.push(seat_assignee);
   }
 
   if (!has_loaded_members) {  
@@ -91,6 +86,11 @@ async function processTeams(org: string, team_name: string, seat_assignee: strin
       const member_name = member.login;
       teams[team_name].members.push(member_name);
       logger.debug(`Found team member ${member_name} for team ${team_name}`);
+      
+      if (org_copilot_seats.some(seat => seat.assignee === member_name) && !teams[team_name].copilot_users.includes(member_name)) {
+        teams[team_name].copilot_users.push(member_name);
+        logger.debug(`Added copilot user ${member_name} to team ${team_name}`);
+      }
     }
   }
 }
@@ -120,10 +120,10 @@ async function processRepositories(repository_owner_name: string, seat_assignee:
   }
 }
 
-async function fetchOrgTeamsMembers(org: string, per_page: number, teams: { [team: string]: TeamInfo }) { 
+async function fetchOrgTeamsMembers(org: string, per_page: number, teams: { [team: string]: TeamInfo }, org_copilot_seats: CopilotSeatAssignee[]) { 
   let team_count: number = 0; 
   for await (const team of listTeams({ org, per_page })) { 
-    processTeams(org, team.slug, undefined, per_page, teams); 
+    processTeams(org, team.slug, per_page, teams, org_copilot_seats); 
     team_count++;
   }
   logger.info(`Found ${team_count} total teams in org ${org}`);
