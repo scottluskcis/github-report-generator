@@ -37,7 +37,7 @@ export async function generateCopilotAssociationsData({
   // NOTE: there is rate limiting with audit log and its not intended to be used in this way constantly
   // may need to reconsider other otpions for future 
   for (const seat of copilot_seats) {
-    await processActiveAreas(org, seat.assignee, time_period, per_page, teams, repositories);
+    await processActiveAreas(org, seat.assignee, time_period, per_page, repositories);
   }
 
   return { copilot_seats, teams, repositories };
@@ -56,16 +56,16 @@ async function fetchCopilotSeats(org: string, per_page: number): Promise<Copilot
   return copilot_seats;
 }
 
-async function processActiveAreas(org: string, seat_assignee: string, time_period: TimePeriodType, per_page: number, teams: { [team: string]: TeamInfo }, repositories: { [repo: string]: Repository }) {
+async function processActiveAreas(org: string, seat_assignee: string, time_period: TimePeriodType, per_page: number, repositories: { [repo: string]: Repository }) {
   const active_areas_iterator = getUserActiveAreas({
     org,
     actor: seat_assignee,
     include: "git", // for now only include git activity
     time_period: time_period,
     per_page: per_page,
-  });
+  }); 
 
-  for await (const active_area of active_areas_iterator) { 
+  for await (const active_area of active_areas_iterator) {  
     if (active_area.repository) {
       await processRepositories(active_area.repository, seat_assignee, per_page, repositories);
     }
@@ -215,7 +215,7 @@ async function* getUserActiveAreas({
     if (!actor) {
       continue;
     }
-
+    
     const team = audit_log_entry.team;
     const repository = audit_log_entry.repository || audit_log_entry.repo;
     const timestamp = timestampToDate(audit_log_entry["@timestamp"]);
