@@ -105,8 +105,9 @@ function getTeamAssociations(data: CopilotAssociationsData): CopilotAssociation[
         if (copilot_users.length === 0) {
           results.push(createAssociation(member, team.team_name, false, "Unknown", "team"));
         }
-      } else {
-        results.push(createAssociation(member, team.team_name, true, "Self", "team"));
+      } else { 
+        logger.warn(`Found copilot user ${member} in team ${team.team_name}, ignoring for report...`);
+        //results.push(createAssociation(member, team.team_name, true, "Self", "team"));
       }
     }
   }
@@ -130,7 +131,8 @@ function getRepositoryAssociations(data: CopilotAssociationsData): CopilotAssoci
           results.push(createAssociation(contributor, repo.repo_name, false, "Unknown", "repository"));
         }
       } else {
-        results.push(createAssociation(contributor, repo.repo_name, true, "Self", "repository"));
+        logger.warn(`Found copilot user ${contributor} in repo ${repo.repo_name}, ignoring for report...`);
+        //results.push(createAssociation(contributor, repo.repo_name, true, "Self", "repository"));
       }
     }
   }
