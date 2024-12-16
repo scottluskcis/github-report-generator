@@ -27,10 +27,12 @@ export async function runCopilotAssociationsReport({
   should_generate_data = true,
   input_file_name = 'copilot-associations.json',
   output_file_name = 'copilot_associations.csv',
+  detailed_output_file_name = 'copilot_associations_detailed.csv',
 }: { 
   should_generate_data?: boolean;
   input_file_name?: string;
   output_file_name?: string;
+  detailed_output_file_name?: string;
 }): Promise<string | undefined> {  
   try {
     if (should_generate_data) {
@@ -39,7 +41,7 @@ export async function runCopilotAssociationsReport({
     }
  
     logger.debug("Running copilot associations report...");
-    const output_file = runReport(input_file_name, output_file_name); 
+    const output_file = runReport(input_file_name, output_file_name, detailed_output_file_name); 
     logger.info(`Generated copilot associations report ${output_file}`);
 
     return output_file; 
@@ -74,7 +76,7 @@ async function generateData(file_name: string): Promise<string> {
   return file;
 }
 
-function runReport(input_file_name: string, output_file_name: string): string | undefined {
+function runReport(input_file_name: string, output_file_name: string, detailed_output_file_name: string): string | undefined {
   const data = readJsonFile<CopilotAssociationsData>(input_file_name);
 
   if (!data) {
@@ -84,6 +86,9 @@ function runReport(input_file_name: string, output_file_name: string): string | 
 
   const associations = getCopilotAssociations(data);
   const csv_file = writeToCsv(associations, output_file_name);
+
+  const detailed_associations = getDetailedCopilotAssociations(data);
+  writeToCsv(detailed_associations, detailed_output_file_name);
 
   return csv_file;
 }
@@ -106,6 +111,40 @@ function getCopilotAssociations(data: CopilotAssociationsData) {
       total_sum,
     };
   });
+}
+
+function getDetailedCopilotAssociations(data: CopilotAssociationsData) {
+  const member_associations = processAssociations(data);
+
+  const detailed_associations: { member_name: string; association_type: string; association_name: string; copilot_user: string }[] = [];
+
+  for (const member in member_associations) {
+    const associations = member_associations[member];
+
+    associations.teams.forEach((team) => {
+      data.teams[team].copilot_users.forEach((copilot_user) => {
+        detailed_associations.push({
+          member_name: member,
+          association_type: 'team',
+          association_name: team,
+          copilot_user: copilot_user,
+        });
+      });
+    });
+
+    associations.repos.forEach((repo) => {
+      data.repositories[repo].associated_copilot_users.forEach((copilot_user) => {
+        detailed_associations.push({
+          member_name: member,
+          association_type: 'repository',
+          association_name: repo,
+          copilot_user: copilot_user,
+        });
+      });
+    });
+  }
+
+  return detailed_associations;
 }
 
 function processAssociations(data: CopilotAssociationsData) {
