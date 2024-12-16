@@ -53,29 +53,38 @@ The reports available in this repository are noted below
 
 ### Copilot Associations
 
-The purpose of [this report](./src/report/copilot-associations-report.ts) is to show what users exist in an organizations teams that do not have a copilot seat in the org but may have a relation to someone else on the team that does have a copilot seat.
+The purpose of [this report](./src/report/copilot-associations-report.ts) is to show what users exist in an organizations teams that do not have a copilot seat in the org but may have a relation (aka association) to someone else on the team that does have a copilot seat.
 
-A CSV file named `copilot_associations.csv` is generated for this report containing the data. You will see the following values in the report:
+There are two reports that are generated as a result of running this report and the names of these files can be managed via [settings](#optional-settings): 
 
-* **org_name**: Name of the organization the report was run for
-* **user_name**: Name of a user found in the org as either a Team Member in one of the orgs teams or an active user in one of the repositories found in the org
-* **user_has_org_copilot_seat**: whether or not the user has been assigned a copilot seat directly by the org. This does not indicate if the user may have been assigned a copilot seat by another org
-* **association**: The association the user has noted in this report. This will either be the name of a Team in the org or the name of a Repository in the org
-* **association_type**: The type of association the user has 
+#### Summary Report 
 
-> [!NOTE]
-> This will either be **team** indicating the user is a member of a team within the org or **repository** indicating the user is an active user in one of the repositories
+This report is intended to summarize members that do not have copilot seats and counts to identify there association with users that do have copilot seats in the organization.
 
-> [!IMPORTANT]
-> The TIME_PERIOD configuration value noted in the setup section above determines what time period a user is considered to be an active user
+A CSV file named `copilot_associations_summary.csv` is generated for this report containing the data. You will see the following values in the report:
 
-* **related_copilot_user_name**: If any other users found within the team or repository have a copilot license they are indicated here as an association to the user that doesn't have a copilot license
-  
-> [!NOTE]
-> If the value is "Unknown" then this indicates no other active users in the repository or team members were found with a copilot seat for the org
+* **member_name**: name of the member that does not have a copilot seat
+* **count_teams**: number of teams this member is a member of that has someone with a copilot seat also as a member of that same team
+* **count_repos**: number of repositories this member is a contributor in that has someone with a copilot seat that is also a contributor to that repository
+* **count_copilot_users**: number of distinct users with a copilot seat that the member is connected to either through a team or a repository
+* **total_sum**: count_teams + count_repos + count_copilot, this could be used as a rank and sorted by to determine which members are closer to a higher number of users with copilot seats
 
 > [!NOTE]
-> IF the value is "Self" then this indicates this is a user that has a copilot seat assigned from the org any they exist in the repostiory or team. You can filter the report to see what teams and repositories a user with a copilot seat in the org may be currently active in
+> Use the total_sum column to rank your members, those with a higher number are likely potential opportunities to utilize a copilot seat because of their relationship to users with copilot seats
+
+#### Detailed Report
+
+This report is a more detailed report that helps identify the actual associations between a member without a copilot seat and those that do have a copilot seat.
+
+A CSV file named `copilot_associations_detailed.csv` is generated for this report containing the data. You will see the following values in the report:
+
+* **member_name**: name of the member that does not have a copilot seat
+* **association_type**: either team or repository, the association this member has with a user that has a copilot seat
+* **association_name**: either the name of the team or name of the repository that links this member to a user with a copilot seat 
+* **copilot_user**: the user with a copilot seat identified as being linked to a member
+
+> [!NOTE]
+> Filter the results by copilot_user to see all teams and repositories that user is a member of or is a contributor in
 
 ## Settings
 
