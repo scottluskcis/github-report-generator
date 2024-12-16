@@ -109,6 +109,10 @@ function getTeamAssociations(data: CopilotAssociationsData): { member: string, t
   const member_teams: { [member: string]: Set<string> } = {};
 
   for (const team_name in data.teams) {
+    if(AppConfig.EXCLUDE_TEAMS.includes(team_name)) {
+      continue;
+    }
+    
     const team = data.teams[team_name];
     const copilot_users = new Set(team.copilot_users);
 

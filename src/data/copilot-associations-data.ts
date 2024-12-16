@@ -2,6 +2,7 @@ import { listCopilotSeats } from "../restapi/copilot";
 import { getAuditLogForActor } from "../restapi/organizations";
 import { listRepoContributors } from "../restapi/repositories";
 import { listTeamMembers, listTeams } from "../restapi/teams";
+import { AppConfig } from "../shared/app-config";
 import logger from "../shared/app-logger";
 import { CopilotSeatAssignee, Repository, TeamInfo, TimePeriodType } from "../shared/shared-types";
 import { timestampToDate } from "../shared/time-util";
@@ -123,6 +124,10 @@ async function processRepositories(repository_owner_name: string, seat_assignee:
 async function fetchOrgTeamsMembers(org: string, per_page: number, teams: { [team: string]: TeamInfo }, org_copilot_seats: CopilotSeatAssignee[]) { 
   let team_count: number = 0; 
   for await (const team of listTeams({ org, per_page })) { 
+    if(AppConfig.EXCLUDE_TEAMS.includes(team.slug)) {
+      continue;
+    }
+
     processTeams(org, team.slug, per_page, teams, org_copilot_seats); 
     team_count++;
   }
