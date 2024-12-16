@@ -25,12 +25,13 @@ export interface CopilotAssociationsData {
 
 export async function runCopilotAssociationsReport({
   should_generate_data = true,
+  input_file_name = 'copilot-associations.json',
+  output_file_name = 'copilot_associations.csv',
 }: { 
-  should_generate_data: boolean 
-}): Promise<string | undefined> { 
-  const input_file_name = 'copilot-associations.json';
-  const output_file_name = 'copilot_associations.csv';
-
+  should_generate_data?: boolean;
+  input_file_name?: string;
+  output_file_name?: string;
+}): Promise<string | undefined> {  
   try {
     if (should_generate_data) {
       logger.debug("Generating copilot associations data...");
