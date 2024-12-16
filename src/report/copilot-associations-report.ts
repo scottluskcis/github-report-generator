@@ -23,10 +23,17 @@ export interface CopilotAssociationsData {
   };
 }
 
-export async function runCopilotAssociationsReport(should_generate_data: boolean = true): Promise<string | undefined> { 
-  const input_file_name = 'copilot-associations.json';
-  const output_file_name = 'copilot_associations.csv';
-
+export async function runCopilotAssociationsReport({
+  should_generate_data = true,
+  input_file_name = 'copilot-associations.json',
+  output_file_name = 'copilot_associations.csv',
+  detailed_output_file_name = 'copilot_associations_detailed.csv',
+}: { 
+  should_generate_data?: boolean;
+  input_file_name?: string;
+  output_file_name?: string;
+  detailed_output_file_name?: string;
+}): Promise<string | undefined> {  
   try {
     if (should_generate_data) {
       logger.debug("Generating copilot associations data...");
@@ -34,7 +41,7 @@ export async function runCopilotAssociationsReport(should_generate_data: boolean
     }
  
     logger.debug("Running copilot associations report...");
-    const output_file = runReport(input_file_name, output_file_name); 
+    const output_file = runReport(input_file_name, output_file_name, detailed_output_file_name); 
     logger.info(`Generated copilot associations report ${output_file}`);
 
     return output_file; 
@@ -69,7 +76,7 @@ async function generateData(file_name: string): Promise<string> {
   return file;
 }
 
-function runReport(input_file_name: string, output_file_name: string): string | undefined {
+function runReport(input_file_name: string, output_file_name: string, detailed_output_file_name: string): string | undefined {
   const data = readJsonFile<CopilotAssociationsData>(input_file_name);
 
   if (!data) {
@@ -80,36 +87,78 @@ function runReport(input_file_name: string, output_file_name: string): string | 
   const associations = getCopilotAssociations(data);
   const csv_file = writeToCsv(associations, output_file_name);
 
+  const detailed_associations = getDetailedCopilotAssociations(data);
+  writeToCsv(detailed_associations, detailed_output_file_name);
+
   return csv_file;
 }
 
 function getCopilotAssociations(data: CopilotAssociationsData) {
-  const team_associations = getTeamAssociations(data);
-  const repository_associations = getRepositoryAssociations(data);
+  const member_associations = processAssociations(data);
 
-  // Create a map for quick lookup of repository associations by member
-  const repo_associations_map = new Map(repository_associations.map(repo => [repo.member, repo]));
+  return Object.keys(member_associations).map((member) => {
+    const associations = member_associations[member];
+    const count_teams = associations.teams.size;
+    const count_repos = associations.repos.size;
+    const count_copilot_users = associations.copilot_users.size;
+    const total_sum = count_teams + count_repos + count_copilot_users;
 
-  // Create a new array that combines the associations for each member
-  const associations_by_member = team_associations.map((team_association) => {
-    const repo_association = repo_associations_map.get(team_association.member);
     return {
-      member_name: team_association.member,
-      //teams: team_association.teams,
-      count_teams: team_association.count_teams,
-      //repos: repo_association ? repo_association.repos : [],
-      count_repos: repo_association ? repo_association.count_repos : 0,
+      member_name: member,
+      count_teams,
+      count_repos,
+      count_copilot_users,
+      total_sum,
     };
   });
-
-  return associations_by_member; 
 }
 
-function getTeamAssociations(data: CopilotAssociationsData): { member: string, teams: string[], count_teams: number }[] {
-  const member_teams: { [member: string]: Set<string> } = {};
+function getDetailedCopilotAssociations(data: CopilotAssociationsData) {
+  const member_associations = processAssociations(data);
 
+  const detailed_associations: { member_name: string; association_type: string; association_name: string; copilot_user: string }[] = [];
+
+  for (const member in member_associations) {
+    const associations = member_associations[member];
+
+    associations.teams.forEach((team) => {
+      data.teams[team].copilot_users.forEach((copilot_user) => {
+        detailed_associations.push({
+          member_name: member,
+          association_type: 'team',
+          association_name: team,
+          copilot_user: copilot_user,
+        });
+      });
+    });
+
+    associations.repos.forEach((repo) => {
+      data.repositories[repo].associated_copilot_users.forEach((copilot_user) => {
+        detailed_associations.push({
+          member_name: member,
+          association_type: 'repository',
+          association_name: repo,
+          copilot_user: copilot_user,
+        });
+      });
+    });
+  }
+
+  return detailed_associations;
+}
+
+function processAssociations(data: CopilotAssociationsData) {
+  const member_associations: { [member: string]: { teams: Set<string>, repos: Set<string>, copilot_users: Set<string> } } = {};
+
+  processTeamAssociations(data, member_associations);
+  processRepositoryAssociations(data, member_associations);
+
+  return member_associations;
+}
+
+function processTeamAssociations(data: CopilotAssociationsData, member_associations: { [member: string]: { teams: Set<string>, repos: Set<string>, copilot_users: Set<string> } }) {
   for (const team_name in data.teams) {
-    if(AppConfig.EXCLUDE_TEAMS.includes(team_name.toLowerCase())) {
+    if (AppConfig.EXCLUDE_TEAMS.includes(team_name.toLowerCase())) {
       continue;
     }
 
@@ -127,24 +176,17 @@ function getTeamAssociations(data: CopilotAssociationsData): { member: string, t
         continue;
       }
 
-      if (!member_teams[member]) {
-        member_teams[member] = new Set();
+      if (!member_associations[member]) {
+        member_associations[member] = { teams: new Set(), repos: new Set(), copilot_users: new Set() };
       }
 
-      member_teams[member].add(team.team_name);
+      member_associations[member].teams.add(team.team_name);
+      copilot_users.forEach(user => member_associations[member].copilot_users.add(user));
     }
   }
-
-  return Object.keys(member_teams).map((member) => ({
-    member,
-    teams: Array.from(member_teams[member]),
-    count_teams: member_teams[member].size,
-  }));
 }
 
-function getRepositoryAssociations(data: CopilotAssociationsData): { member: string, repos: string[], count_repos: number }[] {
-  const member_repos: { [member: string]: Set<string> } = {};
-
+function processRepositoryAssociations(data: CopilotAssociationsData, member_associations: { [member: string]: { teams: Set<string>, repos: Set<string>, copilot_users: Set<string> } }) {
   for (const repo_name in data.repositories) {
     const repo = data.repositories[repo_name];
     const copilot_users = new Set(repo.associated_copilot_users);
@@ -160,17 +202,12 @@ function getRepositoryAssociations(data: CopilotAssociationsData): { member: str
         continue;
       }
 
-      if (!member_repos[contributor]) {
-        member_repos[contributor] = new Set();
+      if (!member_associations[contributor]) {
+        member_associations[contributor] = { teams: new Set(), repos: new Set(), copilot_users: new Set() };
       }
 
-      member_repos[contributor].add(repo.repo_name);
+      member_associations[contributor].repos.add(repo.repo_name);
+      copilot_users.forEach(user => member_associations[contributor].copilot_users.add(user));
     }
   }
-
-  return Object.keys(member_repos).map((member) => ({
-    member,
-    repos: Array.from(member_repos[member]),
-    count_repos: member_repos[member].size,
-  }));
 }

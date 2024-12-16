@@ -1,9 +1,16 @@
 import logger from "./shared/app-logger";
 import { runCopilotAssociationsReport } from "./report/copilot-associations-report";
+import { AppConfig } from "./shared/app-config";
+import { App } from "octokit";
 
 // for now one report, more to come
 logger.info("START - Running copilot associations report...");
-runCopilotAssociationsReport().then((output_file) => {
+runCopilotAssociationsReport({ 
+    should_generate_data: AppConfig.GENERATE_DATA,
+    input_file_name: AppConfig.INPUT_FILE_NAME,
+    output_file_name: AppConfig.OUTPUT_FILE_NAME,
+    detailed_output_file_name: AppConfig.DETAILED_OUTPUT_FILE_NAME,
+}).then((output_file) => {
     logger.info(`END - Generated copilot associations report ${output_file}`);
 });
 

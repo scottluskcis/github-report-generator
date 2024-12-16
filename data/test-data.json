@@ -1,0 +1,144 @@
+{
+    "copilot_seats": [
+      { "assignee": "user1", "last_activity_at": "2023-01-01" },
+      { "assignee": "user2", "last_activity_at": "2023-01-02" },
+      { "assignee": "user3", "last_activity_at": "2023-01-03" },
+      { "assignee": "user4", "last_activity_at": "2023-01-04" }
+    ],
+    "teams": {
+      "team1": {
+        "team_name": "team1",
+        "members": ["member1", "member2", "member3"],
+        "copilot_users": ["user1"]
+      },
+      "team2": {
+        "team_name": "team2",
+        "members": ["member4", "member5"],
+        "copilot_users": ["user2"]
+      },
+      "team3": {
+        "team_name": "team3",
+        "members": ["member3", "member6"],
+        "copilot_users": ["user3"]
+      },
+      "team4": {
+        "team_name": "team4",
+        "members": ["member3", "member5"],
+        "copilot_users": ["user4"]
+      },
+      "team5": {
+        "team_name": "team5",
+        "members": ["member3"],
+        "copilot_users": ["user1"]
+      },
+      "team6": {
+        "team_name": "team6",
+        "members": ["member1", "member3"],
+        "copilot_users": ["user2"]
+      },
+      "team7": {
+        "team_name": "team7",
+        "members": ["member5", "member6"],
+        "copilot_users": ["user3"]
+      },
+      "team8": {
+        "team_name": "team8",
+        "members": ["member2"],
+        "copilot_users": ["user4"]
+      },
+      "team9": {
+        "team_name": "team9",
+        "members": ["member5", "member6"],
+        "copilot_users": ["user1"]
+      },
+      "team10": {
+        "team_name": "team10",
+        "members": ["member3"],
+        "copilot_users": ["user2"]
+      },
+      "team11": {
+        "team_name": "team11",
+        "members": ["member1", "member2"],
+        "copilot_users": ["user3"]
+      },
+      "team12": {
+        "team_name": "team12",
+        "members": ["member5", "member6"],
+        "copilot_users": ["user4"]
+      }
+    },
+    "repositories": {
+      "repo1": {
+        "repo_owner": "owner1",
+        "repo_name": "repo1",
+        "contributors": ["member1", "member2", "member3"],
+        "associated_copilot_users": ["user1"]
+      },
+      "repo2": {
+        "repo_owner": "owner2",
+        "repo_name": "repo2",
+        "contributors": ["member1", "member5"],
+        "associated_copilot_users": ["user2"]
+      },
+      "repo3": {
+        "repo_owner": "owner3",
+        "repo_name": "repo3",
+        "contributors": ["member2", "member3"],
+        "associated_copilot_users": ["user3"]
+      },
+      "repo4": {
+        "repo_owner": "owner4",
+        "repo_name": "repo4",
+        "contributors": ["member1", "member2", "member5"],
+        "associated_copilot_users": ["user4"]
+      },
+      "repo5": {
+        "repo_owner": "owner5",
+        "repo_name": "repo5",
+        "contributors": ["member6"],
+        "associated_copilot_users": ["user1"]
+      },
+      "repo6": {
+        "repo_owner": "owner6",
+        "repo_name": "repo6",
+        "contributors": ["member2"],
+        "associated_copilot_users": ["user2"]
+      },
+      "repo7": {
+        "repo_owner": "owner7",
+        "repo_name": "repo7",
+        "contributors": ["member5", "member6"],
+        "associated_copilot_users": ["user3"]
+      },
+      "repo8": {
+        "repo_owner": "owner8",
+        "repo_name": "repo8",
+        "contributors": ["member2"],
+        "associated_copilot_users": ["user4"]
+      },
+      "repo9": {
+        "repo_owner": "owner9",
+        "repo_name": "repo9",
+        "contributors": ["member5", "member6"],
+        "associated_copilot_users": ["user1"]
+      },
+      "repo10": {
+        "repo_owner": "owner10",
+        "repo_name": "repo10",
+        "contributors": ["member2"],
+        "associated_copilot_users": ["user2"]
+      },
+      "repo11": {
+        "repo_owner": "owner11",
+        "repo_name": "repo11",
+        "contributors": ["member1", "member2"],
+        "associated_copilot_users": ["user3"]
+      },
+      "repo12": {
+        "repo_owner": "owner12",
+        "repo_name": "repo12",
+        "contributors": ["member5", "member6"],
+        "associated_copilot_users": ["user4"]
+      }
+    }
+  }
