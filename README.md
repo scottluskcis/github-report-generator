@@ -95,7 +95,7 @@ ORGANIZATION=<your org name here>
 
 ### Optional Settings
 
-Optional settings and their defaut values if not specified
+Optional settings and their defaut values if not specified that can be added to the `.env.local` file.
 
 ```
 # the version of the GitHub API to use
@@ -107,6 +107,18 @@ TIME_PERIOD=month
 
 # any teams to exclude from the results (comma separated list)
 EXCLUDE_TEAMS=team1,team2
+
+# true to make the call to generate data, useful to set to false if data already generated and you just want a report 
+GENERATE_DATA=true
+
+# name of the file to give to generated data file or file to use if you already have one
+INPUT_FILE_NAME=copilot-associations.json
+
+# file that will be summary of report 
+OUTPUT_FILE_NAME=copilot_associations_summary.csv
+
+# file that will contain all details for report
+DETAILED_OUTPUT_FILE_NAME=copilot_associations_detailed.csv
 
 # pretty, json, hidden
 LOG_TYPE=pretty
