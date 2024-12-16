@@ -12,6 +12,10 @@ export class AppConfig {
   public static readonly GENERATE_DATA: boolean = AppConfig.getEnvVar("GENERATE_DATA", "true").toLowerCase() === "true";
   public static readonly GITHUB_TOKENS_BY_ORG: { [key: string]: string } = AppConfig.getTokensByOrg(AppConfig.getEnvVar("GITHUB_TOKENS_BY_ORG"));
   public static readonly PER_PAGE: number = parseInt(AppConfig.getEnvVar("PER_PAGE", "100"));
+  public static readonly EXCLUDE_TEAMS: string[] = AppConfig.getEnvVar("EXCLUDE_TEAMS", "")
+    .split(",")
+    .map((team) => team.trim().toLowerCase())
+    .filter((team) => team !== "");
 
   // logging settings
   public static readonly MIN_LOG_LEVEL: number = parseInt(AppConfig.getEnvVar("MIN_LOG_LEVEL", "3"));
