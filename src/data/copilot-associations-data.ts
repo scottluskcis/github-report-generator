@@ -124,7 +124,7 @@ async function processRepositories(repository_owner_name: string, seat_assignee:
 async function fetchOrgTeamsMembers(org: string, per_page: number, teams: { [team: string]: TeamInfo }, org_copilot_seats: CopilotSeatAssignee[]) { 
   let team_count: number = 0; 
   for await (const team of listTeams({ org, per_page })) { 
-    if(AppConfig.EXCLUDE_TEAMS.includes(team.slug)) {
+    if (AppConfig.EXCLUDE_TEAMS.includes(team.slug.toLowerCase())) {
       continue;
     }
 
