@@ -2,8 +2,7 @@ import { RequestError } from "octokit";
 import { generateCopilotAssociationsData } from "../data/copilot-associations-data";
 import { AppConfig } from "../shared/app-config";
 import logger from "../shared/app-logger";
-import { readJsonFile, writeToCsv, writeToFileSync } from "../shared/file-utils";
-import { CopilotAssociation } from "../shared/shared-types";
+import { readJsonFile, writeToCsv, writeToFileSync } from "../shared/file-utils"; 
 
 export interface CopilotAssociationsData {
   copilot_seats: { assignee: string; last_activity_at: string }[];
@@ -24,12 +23,12 @@ export interface CopilotAssociationsData {
   };
 }
 
-export async function runCopilotAssociationsReport(): Promise<string | undefined> { 
+export async function runCopilotAssociationsReport(should_generate_data: boolean = true): Promise<string | undefined> { 
   const input_file_name = 'copilot-associations.json';
   const output_file_name = 'copilot_associations.csv';
 
   try {
-    if (AppConfig.GENERATE_DATA) {
+    if (should_generate_data) {
       logger.debug("Generating copilot associations data...");
       await generateData(input_file_name);
     }
@@ -84,69 +83,90 @@ function runReport(input_file_name: string, output_file_name: string): string | 
   return csv_file;
 }
 
-function getCopilotAssociations(data: CopilotAssociationsData): CopilotAssociation[] {
+function getCopilotAssociations(data: CopilotAssociationsData) {
   const team_associations = getTeamAssociations(data);
   const repository_associations = getRepositoryAssociations(data);
-  return team_associations.concat(repository_associations);
+
+  // Create a map for quick lookup of repository associations by member
+  const repo_associations_map = new Map(repository_associations.map(repo => [repo.member, repo]));
+
+  // Create a new array that combines the associations for each member
+  const associations_by_member = team_associations.map((team_association) => {
+    const repo_association = repo_associations_map.get(team_association.member);
+    return {
+      member_name: team_association.member,
+      //teams: team_association.teams,
+      count_teams: team_association.count_teams,
+      //repos: repo_association ? repo_association.repos : [],
+      count_repos: repo_association ? repo_association.count_repos : 0,
+    };
+  });
+
+  return associations_by_member; 
 }
 
-function getTeamAssociations(data: CopilotAssociationsData): CopilotAssociation[] {
-  const results: CopilotAssociation[] = [];
+function getTeamAssociations(data: CopilotAssociationsData): { member: string, teams: string[], count_teams: number }[] {
+  const member_teams: { [member: string]: Set<string> } = {};
 
   for (const team_name in data.teams) {
     const team = data.teams[team_name];
-    const copilot_users = team.copilot_users;
+    const copilot_users = new Set(team.copilot_users);
+
+    if (copilot_users.size === 0) {
+      logger.debug(`No copilot users found for team ${team.team_name}, ignoring for report...`);
+      continue;
+    }
 
     for (const member of team.members) {
-      if (!copilot_users.includes(member)) {
-        for (const copilot_user of copilot_users) {
-          results.push(createAssociation(member, team.team_name, false, copilot_user, "team"));
-        }
-        if (copilot_users.length === 0) {
-          results.push(createAssociation(member, team.team_name, false, "Unknown", "team"));
-        }
-      } else { 
-        logger.warn(`Found copilot user ${member} in team ${team.team_name}, ignoring for report...`);
-        //results.push(createAssociation(member, team.team_name, true, "Self", "team"));
+      if (copilot_users.has(member)) {
+        logger.debug(`Found copilot user ${member} in team ${team.team_name}, ignoring for report...`);
+        continue;
       }
+
+      if (!member_teams[member]) {
+        member_teams[member] = new Set();
+      }
+
+      member_teams[member].add(team.team_name);
     }
   }
 
-  return results;
+  return Object.keys(member_teams).map((member) => ({
+    member,
+    teams: Array.from(member_teams[member]),
+    count_teams: member_teams[member].size,
+  }));
 }
 
-function getRepositoryAssociations(data: CopilotAssociationsData): CopilotAssociation[] {
-  const results: CopilotAssociation[] = [];
+function getRepositoryAssociations(data: CopilotAssociationsData): { member: string, repos: string[], count_repos: number }[] {
+  const member_repos: { [member: string]: Set<string> } = {};
 
   for (const repo_name in data.repositories) {
     const repo = data.repositories[repo_name];
-    const copilot_users = repo.associated_copilot_users;
+    const copilot_users = new Set(repo.associated_copilot_users);
+
+    if (copilot_users.size === 0) {
+      logger.debug(`No copilot users found for repo ${repo.repo_name}, ignoring for report...`);
+      continue;
+    }
 
     for (const contributor of repo.contributors) {
-      if (!copilot_users.includes(contributor)) {
-        for (const copilot_user of copilot_users) {
-          results.push(createAssociation(contributor, repo.repo_name, false, copilot_user, "repository"));
-        }
-        if (copilot_users.length === 0) {
-          results.push(createAssociation(contributor, repo.repo_name, false, "Unknown", "repository"));
-        }
-      } else {
-        logger.warn(`Found copilot user ${contributor} in repo ${repo.repo_name}, ignoring for report...`);
-        //results.push(createAssociation(contributor, repo.repo_name, true, "Self", "repository"));
+      if (copilot_users.has(contributor)) {
+        logger.debug(`Found copilot user ${contributor} in repo ${repo.repo_name}, ignoring for report...`);
+        continue;
       }
+
+      if (!member_repos[contributor]) {
+        member_repos[contributor] = new Set();
+      }
+
+      member_repos[contributor].add(repo.repo_name);
     }
   }
 
-  return results;
-}
-
-function createAssociation(user_name: string, association: string, has_copilot_seat: boolean, related_copilot_user_name: string, association_type: "team" | "repository"): CopilotAssociation {
-  return {
-    org_name: "org_name_placeholder", // Replace with actual org name if available
-    user_name,
-    user_has_org_copilot_seat: has_copilot_seat,
-    association,
-    association_type,
-    related_copilot_user_name
-  };
+  return Object.keys(member_repos).map((member) => ({
+    member,
+    repos: Array.from(member_repos[member]),
+    count_repos: member_repos[member].size,
+  }));
 }
