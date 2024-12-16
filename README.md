@@ -105,6 +105,9 @@ GITHUB_API_VERSION=2022-11-28
 # valid values are day, week, month, quarter, or year 
 TIME_PERIOD=month
 
+# any teams to exclude from the results (comma separated list)
+EXCLUDE_TEAMS=team1,team2
+
 # pretty, json, hidden
 LOG_TYPE=pretty
 
