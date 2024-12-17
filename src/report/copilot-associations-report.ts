@@ -122,7 +122,7 @@ function getDetailedCopilotAssociations(data: CopilotAssociationsData) {
     const associations = member_associations[member];
 
     associations.teams.forEach((team) => {
-      data.teams[team].copilot_users.forEach((copilot_user) => {
+      data.teams[team].copilot_users?.forEach((copilot_user) => {
         detailed_associations.push({
           member_name: member,
           association_type: 'team',
@@ -133,7 +133,7 @@ function getDetailedCopilotAssociations(data: CopilotAssociationsData) {
     });
 
     associations.repos.forEach((repo) => {
-      data.repositories[repo].associated_copilot_users.forEach((copilot_user) => {
+      data.repositories[repo].associated_copilot_users?.forEach((copilot_user) => {
         detailed_associations.push({
           member_name: member,
           association_type: 'repository',
