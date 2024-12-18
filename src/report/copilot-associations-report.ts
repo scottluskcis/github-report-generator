@@ -2,7 +2,11 @@ import { RequestError } from "octokit";
 import { generateCopilotAssociationsData } from "../data/copilot-associations-data";
 import { AppConfig } from "../shared/app-config";
 import logger from "../shared/app-logger";
-import { readJsonFile, writeToCsv, writeToFileSync } from "../shared/file-utils"; 
+import {
+  readJsonFile,
+  writeToCsv,
+  writeToFileSync,
+} from "../shared/file-utils";
 
 export interface CopilotAssociationsData {
   copilot_seats: { assignee: string; last_activity_at: string }[];
@@ -16,7 +20,7 @@ export interface CopilotAssociationsData {
   repositories: {
     [repo_name: string]: {
       repo_owner: string;
-      repo_name: string; 
+      repo_name: string;
       contributors: string[];
       associated_copilot_users: string[];
     };
@@ -25,50 +29,54 @@ export interface CopilotAssociationsData {
 
 export async function runCopilotAssociationsReport({
   should_generate_data = true,
-  input_file_name = 'copilot-associations.json',
-  output_file_name = 'copilot_associations.csv',
-  detailed_output_file_name = 'copilot_associations_detailed.csv',
-}: { 
+  input_file_name = "copilot-associations.json",
+  output_file_name = "copilot_associations.csv",
+  detailed_output_file_name = "copilot_associations_detailed.csv",
+}: {
   should_generate_data?: boolean;
   input_file_name?: string;
   output_file_name?: string;
   detailed_output_file_name?: string;
-}): Promise<string | undefined> {  
+}): Promise<string | undefined> {
   try {
     if (should_generate_data) {
       logger.debug("Generating copilot associations data...");
       await generateData(input_file_name);
     }
- 
+
     logger.debug("Running copilot associations report...");
-    const output_file = runReport(input_file_name, output_file_name, detailed_output_file_name); 
+    const output_file = runReport(
+      input_file_name,
+      output_file_name,
+      detailed_output_file_name
+    );
     logger.info(`Generated copilot associations report ${output_file}`);
 
-    return output_file; 
-  } catch(error) {
+    return output_file;
+  } catch (error) {
     // octokit RequestError, log details for debugging
-    if(error instanceof RequestError) { 
-      logger.error('RequestError - message:', error.message);
-      logger.debug('RequestError - status:', error.status);
-      logger.debug('RequestError - request:', error.request);
-      logger.debug('RequestError - response:', error.response);
-    } 
-    // log 
+    if (error instanceof RequestError) {
+      logger.error("RequestError - message:", error.message);
+      logger.debug("RequestError - status:", error.status);
+      logger.debug("RequestError - request:", error.request);
+      logger.debug("RequestError - response:", error.response);
+    }
+    // log
     logger.fatal(error);
 
     return undefined;
   }
 }
 
-async function generateData(file_name: string): Promise<string> { 
+async function generateData(file_name: string): Promise<string> {
   logger.debug("Generating copilot associations data...");
-  const data: CopilotAssociationsData = await generateCopilotAssociationsData({ 
-    org: AppConfig.ORGANIZATION, 
-    per_page: AppConfig.PER_PAGE, 
-    time_period: AppConfig.TIME_PERIOD 
+  const data: CopilotAssociationsData = await generateCopilotAssociationsData({
+    org: AppConfig.ORGANIZATION,
+    per_page: AppConfig.PER_PAGE,
+    time_period: AppConfig.TIME_PERIOD,
   });
   logger.info("Generated copilot associations data");
- 
+
   logger.debug("Writing copilot associations data to file...");
   const file = writeToFileSync(data, file_name);
   logger.info(`Wrote copilot associations data to file ${file}`);
@@ -76,7 +84,11 @@ async function generateData(file_name: string): Promise<string> {
   return file;
 }
 
-function runReport(input_file_name: string, output_file_name: string, detailed_output_file_name: string): string | undefined {
+function runReport(
+  input_file_name: string,
+  output_file_name: string,
+  detailed_output_file_name: string
+): string | undefined {
   const data = readJsonFile<CopilotAssociationsData>(input_file_name);
 
   if (!data) {
@@ -116,39 +128,70 @@ function getCopilotAssociations(data: CopilotAssociationsData) {
 function getDetailedCopilotAssociations(data: CopilotAssociationsData) {
   const member_associations = processAssociations(data);
 
-  const detailed_associations: { member_name: string; association_type: string; association_name: string; copilot_user: string }[] = [];
+  const detailed_associations: {
+    member_name: string;
+    association_type: string;
+    association_name: string;
+    copilot_user: string;
+  }[] = [];
 
   for (const member in member_associations) {
     const associations = member_associations[member];
 
-    associations.teams.forEach((team) => {
-      data.teams[team].copilot_users.forEach((copilot_user) => {
+    for (const team of associations.teams) {
+      const theTeam = data.teams[team];
+      if (!theTeam) {
+        logger.warn(`Team ${team} not found in data.teams, skipping...`);
+        continue;
+      }
+      if (!theTeam.copilot_users) {
+        logger.warn(`Copilot users not found for team ${team}, skipping...`);
+        continue;
+      }
+      for (const copilot_user of theTeam.copilot_users) {
         detailed_associations.push({
           member_name: member,
-          association_type: 'team',
+          association_type: "team",
           association_name: team,
           copilot_user: copilot_user,
         });
-      });
-    });
+      }
+    }
 
-    associations.repos.forEach((repo) => {
-      data.repositories[repo].associated_copilot_users.forEach((copilot_user) => {
+    for (const repo of associations.repos) {
+      const theRepo = data.repositories[repo];
+      if (!theRepo) {
+        logger.warn(`Repo ${repo} not found in data.repositories, skipping...`);
+        continue;
+      }
+      if (!theRepo.associated_copilot_users) {
+        logger.warn(
+          `Associated copilot users not found for repo ${repo}, skipping...`
+        );
+        continue;
+      }
+      for (const copilot_user of theRepo.associated_copilot_users) {
         detailed_associations.push({
           member_name: member,
-          association_type: 'repository',
+          association_type: "repository",
           association_name: repo,
           copilot_user: copilot_user,
         });
-      });
-    });
+      }
+    }
   }
 
   return detailed_associations;
 }
 
 function processAssociations(data: CopilotAssociationsData) {
-  const member_associations: { [member: string]: { teams: Set<string>, repos: Set<string>, copilot_users: Set<string> } } = {};
+  const member_associations: {
+    [member: string]: {
+      teams: Set<string>;
+      repos: Set<string>;
+      copilot_users: Set<string>;
+    };
+  } = {};
 
   processTeamAssociations(data, member_associations);
   processRepositoryAssociations(data, member_associations);
@@ -156,7 +199,16 @@ function processAssociations(data: CopilotAssociationsData) {
   return member_associations;
 }
 
-function processTeamAssociations(data: CopilotAssociationsData, member_associations: { [member: string]: { teams: Set<string>, repos: Set<string>, copilot_users: Set<string> } }) {
+function processTeamAssociations(
+  data: CopilotAssociationsData,
+  member_associations: {
+    [member: string]: {
+      teams: Set<string>;
+      repos: Set<string>;
+      copilot_users: Set<string>;
+    };
+  }
+) {
   for (const team_name in data.teams) {
     if (AppConfig.EXCLUDE_TEAMS.includes(team_name.toLowerCase())) {
       continue;
@@ -166,48 +218,77 @@ function processTeamAssociations(data: CopilotAssociationsData, member_associati
     const copilot_users = new Set(team.copilot_users);
 
     if (copilot_users.size === 0) {
-      logger.debug(`No copilot users found for team ${team.team_name}, ignoring for report...`);
+      logger.debug(
+        `No copilot users found for team ${team.team_name}, ignoring for report...`
+      );
       continue;
     }
 
     for (const member of team.members) {
       if (copilot_users.has(member)) {
-        logger.debug(`Found copilot user ${member} in team ${team.team_name}, ignoring for report...`);
+        logger.debug(
+          `Found copilot user ${member} in team ${team.team_name}, ignoring for report...`
+        );
         continue;
       }
 
       if (!member_associations[member]) {
-        member_associations[member] = { teams: new Set(), repos: new Set(), copilot_users: new Set() };
+        member_associations[member] = {
+          teams: new Set(),
+          repos: new Set(),
+          copilot_users: new Set(),
+        };
       }
 
       member_associations[member].teams.add(team.team_name);
-      copilot_users.forEach(user => member_associations[member].copilot_users.add(user));
+      copilot_users.forEach((user) =>
+        member_associations[member].copilot_users.add(user)
+      );
     }
   }
 }
 
-function processRepositoryAssociations(data: CopilotAssociationsData, member_associations: { [member: string]: { teams: Set<string>, repos: Set<string>, copilot_users: Set<string> } }) {
+function processRepositoryAssociations(
+  data: CopilotAssociationsData,
+  member_associations: {
+    [member: string]: {
+      teams: Set<string>;
+      repos: Set<string>;
+      copilot_users: Set<string>;
+    };
+  }
+) {
   for (const repo_name in data.repositories) {
     const repo = data.repositories[repo_name];
     const copilot_users = new Set(repo.associated_copilot_users);
 
     if (copilot_users.size === 0) {
-      logger.debug(`No copilot users found for repo ${repo.repo_name}, ignoring for report...`);
+      logger.debug(
+        `No copilot users found for repo ${repo.repo_name}, ignoring for report...`
+      );
       continue;
     }
 
     for (const contributor of repo.contributors) {
       if (copilot_users.has(contributor)) {
-        logger.debug(`Found copilot user ${contributor} in repo ${repo.repo_name}, ignoring for report...`);
+        logger.debug(
+          `Found copilot user ${contributor} in repo ${repo.repo_name}, ignoring for report...`
+        );
         continue;
       }
 
       if (!member_associations[contributor]) {
-        member_associations[contributor] = { teams: new Set(), repos: new Set(), copilot_users: new Set() };
+        member_associations[contributor] = {
+          teams: new Set(),
+          repos: new Set(),
+          copilot_users: new Set(),
+        };
       }
 
       member_associations[contributor].repos.add(repo.repo_name);
-      copilot_users.forEach(user => member_associations[contributor].copilot_users.add(user));
+      copilot_users.forEach((user) =>
+        member_associations[contributor].copilot_users.add(user)
+      );
     }
   }
 }
